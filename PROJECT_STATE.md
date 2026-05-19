@@ -9,130 +9,89 @@
 **Pour :** Allyson Hardy, optométriste — ED Optique Heusy (Belgique)
 **Responsable technique :** Fabian Hardy
 **Domaine :** retineetpupille.be
-**Serveur actuel :** 204.168.202.176 (temporaire — migratable)
+**Serveur actuel :** 204.168.202.176 (Hetzner — Traefik v3 opérationnel)
 
 ## Phases du projet
 
 | Phase | Description | Statut |
 |---|---|---|
-| 0 — Fondations | Infra, docs, workflow, skills | 🟡 En cours |
-| 1 — Foundation code | FastAPI skeleton, DB, Auth | ⬜ À faire |
+| 0 — Fondations | Infra, docs, workflow, skills | ✅ Terminé |
+| 1 — Foundation code | FastAPI skeleton, DB, Auth | 🟡 En cours |
 | 2 — Core métier | Clients, prescriptions, import DBF | ⬜ À faire |
 | 3 — Commercial | Commandes, fournisseurs, stock | ⬜ À faire |
-| 4 — Deploy | DNS, Traefik, prod, migration | ⬜ À faire |
+| 4 — Deploy | DNS, prod, migration | ⬜ À faire |
 
-## Sprint actuel — Sprint 0 : Fondations
+## Sprint 0 — Fondations ✅ TERMINÉ (2026-05-19)
 
-**Objectif :** Tout ce qui permet de coder proprement (infra doc, workflow, skills, docker)
+- ✅ VM dev Ubuntu 24.04 — Docker, Avahi, Tailscale (IP : 100.69.202.89)
+- ✅ GitHub repo + branches main/develop + CI/CD GitHub Actions
+- ✅ GitHub Secrets configurés (6 secrets)
+- ✅ Documentation complète (docs/, CLAUDE.md, TASKS.md, ROADMAP.md, IDEAS.md)
+- ✅ Réponses Allyson intégrées (docs/user/reponses-allyson.md)
+- ✅ Traefik v3 déployé sur VPS — mind.fabianhardy.com migré, SSL Let's Encrypt auto
+- ✅ /srv/retines-pupilles créé avec .env.prod (secrets générés)
+- ✅ DNS Cloudflare : app/docs/www.retineetpupille.be → 204.168.202.176
+- ✅ Tunnel Cowork↔VM via Tailscale opérationnel
+- ✅ Source de vérité : VM/GitHub (OneDrive abandonné pour le code)
 
-### TASK-000 : Workflow Cowork ↔ Claude Code ✅
-- Skills opt-start / opt-end créés
-- TASKS.md avec Sprint 1 prêt
-- Flux validé : Cowork supervise, Claude Code code via SSH
+## Sprint 1 — Foundation code 🟡 EN COURS
 
-### TASK-INF-001 : Documentation complète 🟡
-- ✅ docs/00-overview.md
-- ✅ docs/architecture/stack.md
-- ✅ docs/architecture/server.md
-- ✅ docs/architecture/data-merge.md
-- ✅ docs/dev/getting-started.md
-- ✅ docs/dev/git-workflow.md
-- ✅ docs/dev/env-variables.md
-- ✅ docs/deploy/migration.md
-- ✅ docs/deploy/backup.md
-- ✅ docs/user/guide-allyson.md
-- ⬜ Remplacer les `[DOMAIN]` restants → retineetpupille.be
+- TASK-001 : FastAPI skeleton 🔴 **PROCHAINE TÂCHE**
+- TASK-002 : React frontend 🔴
+- TASK-003 : DB models + Alembic 🔴
+- TASK-004 : JWT auth 🔴
+- TASK-005 : DBF import service 🔴
 
-### TASK-INF-002 : Infrastructure Docker + Traefik 🟡
-- ✅ docker-compose.yml (base)
-- ✅ docker-compose.dev.yml
-- ✅ docker-compose.prod.yml
-- ✅ traefik/docker-compose.yml
-- ✅ traefik/traefik.yml
-- ✅ traefik/setup.sh
-- ✅ mkdocs.yml + mkdocs-docker-compose.yml
-- ⬜ Exécution Traefik migration sur serveur 204.168.202.176
+## Accès VM dev depuis Cowork
 
-### TASK-INF-003 : Agent Monitor 🟡
-- ✅ agent-monitor/monitor.py (dashboard SSE port 7777)
-- ✅ agent-monitor/hooks/ (pre-tool, post-tool, stop)
-- ✅ agent-monitor/claude-hooks-config.json
-- ⬜ Déploiement sur VM dev (après install VMware)
+- **IP Tailscale :** 100.69.202.89 / **User :** fabian / **Clé :** id_ed25519 (workspace)
+- **Auth key Tailscale :** tailscale-authkey.txt (expire ~2026-08-17, Reusable+Ephemeral)
+- Connexion via tailscaled userspace + SOCKS5 proxy localhost:1055
 
-### TASK-INF-004 : VM Dev VMware ⬜
-- Guide créé dans docs/dev/getting-started.md
-- Installation en cours côté Fabian (VMware Workstation Pro 26h1)
-- Ubuntu Server 24.04, 4GB RAM, Bridged network, 40GB disk
+## Accès VPS prod
 
-### TASK-INF-005 : DNS O2switch ⬜
-- Domaine : retineetpupille.be (O2switch)
-- À faire : Zone Editor → A records (PAS nameserver change)
-  - app.retineetpupille.be → 204.168.202.176
-  - docs.retineetpupille.be → 204.168.202.176
-  - www.retineetpupille.be → 204.168.202.176
-
-## Sprint 1 — Foundation code (planifié)
-
-Voir TASKS.md pour le détail :
-- TASK-001 : FastAPI skeleton
-- TASK-002 : React frontend
-- TASK-003 : DB models + Alembic
-- TASK-004 : JWT auth
-- TASK-005 : DBF import service
+- **IP :** 204.168.202.176 / **User :** root / **Clé :** mind_hetzner (workspace)
+- **Traefik :** /srv/traefik/ — fix clé : --providers.docker.network=traefik-public
+- **Retines prod :** /srv/retines-pupilles/.env.prod (configuré)
+- **Mind :** /srv/mind/ — migré sous Traefik (docker-compose.prod.yml + traefik.conf mis à jour)
 
 ## Décisions architecturales clés
 
 | Décision | Justification | Date |
 |---|---|---|
-| Structure propre, EDOPT se greffe | Rétines & Pupilles a son propre modèle métier optimisé | 2026-05 |
-| Merge 4 cas (source + allyson_modified_fields) | Protéger données saisies par Allyson | 2026-05 |
-| Traefik remplace Nginx | Multi-projet sur même serveur, SSL auto | 2026-05 |
-| Claude Code via SSH sur VM dev | Pas de code sur machine Windows Fabian | 2026-05 |
-| MkDocs Material pour docs | Simple, versionnée Git, thème propre | 2026-05 |
+| Structure propre, EDOPT se greffe | Modèle métier optimisé optométrie | 2026-05 |
+| Merge 4 cas (allyson_modified_fields) | Protéger données saisies par Allyson | 2026-05 |
+| Traefik v3 + --providers.docker.network | Obligatoire si container multi-réseaux | 2026-05-19 |
+| Claude Code via SSH sur VM dev | Pas de code sur Windows Fabian | 2026-05 |
+| VM/GitHub = source de vérité | OneDrive abandonné pour le code | 2026-05-19 |
 
-## Informations métier (Allyson) — Questionnaire intégré ✅
+## Informations métier (Allyson)
 
-> Synthèse complète dans `docs/user/reponses-allyson.md`
+> Synthèse complète dans docs/user/reponses-allyson.md
 
-**Profil usage :**
-- 5-10 clients/jour — volume modéré
-- Consulte l'historique **systématiquement** avant chaque client → recherche rapide critique
-- Accès hors magasin : rarement (1x/mois) → mobile non prioritaire pour MVP
-
-**Champs client indispensables :** nom, prénom, date de naissance, GSM
-
-**Priorités MVP (indispensables) :**
-1. Gestion clients (création, modification, historique)
-2. Recherche client rapide (nom, GSM, adresse)
-3. Enregistrement prescriptions visionnelles
-4. Stock & gestion fournisseurs
-5. Commandes verres/montures
-6. Facturation & documents commerciaux
-
-**Scope confirmé :** optique uniquement (pas d'auditifs), inventaire annuel, lentilles sur commande
-
-**Points à clarifier encore :**
-- 🟡 A3 : quelles sont les 3 tâches les plus chronophages ? (champ non rempli)
-- 🟡 A2 : flux détaillé d'une visite client ? (champ non rempli)
-- 🟡 Multi-magasin (Heusy + Welkenraedt) : fréquence et besoin réel de synchro ?
+**Priorités MVP :** clients, recherche rapide, prescriptions, stock, commandes, facturation
+**Champs requis :** nom, prénom, date_naissance, gsm
+**À clarifier :** A3 (tâches chronophages), A2 (flux visite), multi-magasin
 
 ## Blocages actuels
 
 | Blocage | Ce qu'il faut | Priorité |
 |---|---|---|
-| ~~Questionnaire Allyson~~ | ~~Re-partager~~ | ✅ Levé |
-| ~~VM dev~~ | ~~Installer VMware + Ubuntu~~ | ✅ Levé |
-| ~~GitHub repo~~ | ~~Créer + CI/CD~~ | ✅ Levé |
 | A3 & A2 non remplis | Poser les questions à Allyson | 🟡 Moyen |
-| GitHub Secrets CI/CD | Configurer dans repo Settings | 🟡 Moyen |
-| DNS non configuré | Fabian → O2switch Zone Editor | 🟡 Moyen |
-| Traefik migration prod | Exécuter sur 204.168.202.176 | 🟡 Moyen |
-| Fichiers encore sur OneDrive | Migrer source de vérité → VM/GitHub | 🔴 Prochain |
+| mind docker-compose.prod.yml modifié | Committer dans repo mind | 🟡 Faible |
 
-## Dernière session — 2026-05-19 (session 2)
+## Dernière session — 2026-05-19 (session 3)
 
 **Mode :** COWORK + infra
 
 ### Réalisé
-- Intégration complète des réponses d'Allyson (15 captures → reponses-allyson.md)
-- An
+- Tailscale VM dev + sandbox Cowork (auth key réutilisable, expire 2026-08-17)
+- skill opt-start mis à jour (tunnel Tailscale intégré)
+- IDEA-006 résolue — VM/GitHub = source de vérité
+- /srv/retines-pupilles créé, .env.prod configuré
+- GitHub Secrets configurés (6 secrets)
+- Migration Traefik v3 — mind.fabianhardy.com SSL auto, fix --providers.docker.network
+- Sprint 0 complété à 100%
+
+### À faire prochaine session
+- TASK-001 FastAPI skeleton
