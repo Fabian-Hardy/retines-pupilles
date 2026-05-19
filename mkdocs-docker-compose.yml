@@ -1,0 +1,33 @@
+version: "3.9"
+
+# MkDocs Material — Documentation Rétines & Pupilles
+# Dev  : docker compose -f mkdocs-docker-compose.yml up
+#        → http://localhost:8080 (live reload)
+# Prod : docker compose -f mkdocs-docker-compose.yml -f mkdocs-docker-compose.prod.yml up -d
+#        → https://docs.retineetpupille.be
+
+services:
+  mkdocs:
+    image: squidfunk/mkdocs-material:latest
+    container_name: retines-docs
+    volumes:
+      - .:/docs
+    ports:
+      - "8080:8000"
+    command: serve --dev-addr=0.0.0.0:8000
+    # En prod, remplacer par : command: build
+    # et servir le dossier site/ via nginx ou Traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.retines-docs.rule=Host(`docs.retineetpupille.be`)"
+      - "traefik.http.routers.retines-docs.entrypoints=https"
+      - "traefik.http.routers.retines-docs.tls=true"
+      - "traefik.http.routers.retines-docs.tls.certresolver=letsencrypt"
+      - "traefik.http.services.retines-docs.loadbalancer.server.port=8000"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

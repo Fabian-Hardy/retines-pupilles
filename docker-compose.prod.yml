@@ -1,0 +1,55 @@
+version: "3.9"
+
+# Override production — Traefik, restart always, pas de volumes montés
+# Usage : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  backend:
+    restart: always
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # Route /api vers le backend
+      - "traefik.http.routers.retines-backend.rule=Host(`app.retineetpupille.be`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.retines-backend.entrypoints=https"
+      - "traefik.http.routers.retines-backend.tls=true"
+      - "traefik.http.routers.retines-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.retines-backend.loadbalancer.server.port=8000"
+      # Middleware strip prefix /api optionnel — désactiver si l'app monte ses routes sous /api
+      # - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+      # - "traefik.http.routers.retines-backend.middlewares=strip-api"
+    networks:
+      - retines-net
+      - proxy
+
+  frontend:
+    restart: always
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.retines-frontend.rule=Host(`app.retineetpupille.be`)"
+      - "traefik.http.routers.retines-frontend.entrypoints=https"
+      - "traefik.http.routers.retines-frontend.tls=true"
+      - "traefik.http.routers.retines-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.retines-frontend.loadbalancer.server.port=80"
+      # Priorité plus basse que le backend pour que /api soit capturé en premier
+      - "traefik.http.routers.retines-frontend.priority=1"
+      - "traefik.http.routers.retines-backend.priority=10"
+    networks:
+      - retines-net
+      - proxy
+
+  postgresql:
+    restart: always
+
+  redis:
+    restart: always
+
+networks:
+  proxy:
+    external: true

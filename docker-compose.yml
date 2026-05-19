@@ -1,0 +1,73 @@
+version: "3.9"
+
+# Base commune — utilisé seul pour les overrides dev/prod
+# Usage dev  : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Usage prod : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: retines-backend:${APP_VERSION:-0.1.0}
+    env_file: .env
+    environment:
+      - DB_HOST=${DB_HOST:-postgresql}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-retines_db}
+      - DB_USER=${DB_USER:-retines}
+      - DB_PASS=${DB_PASS}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - retines-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: retines-frontend:${APP_VERSION:-0.1.0}
+    env_file: .env
+    depends_on:
+      - backend
+    networks:
+      - retines-net
+
+  postgresql:
+    image: postgres:16-alpine
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-retines_db}
+      POSTGRES_USER: ${DB_USER:-retines}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-retines} -d ${DB_NAME:-retines_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - retines-net
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - retines-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  retines-net:
+    driver: bridge

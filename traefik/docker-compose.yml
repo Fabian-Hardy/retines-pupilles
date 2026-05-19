@@ -1,0 +1,27 @@
+version: "3.9"
+
+# Traefik v3 — reverse proxy + TLS automatique
+# Déployer en premier, avant les autres services.
+# Usage : cd /srv/traefik && docker compose up -d
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+    labels:
+      # Dashboard désactivé en prod — activer uniquement pour debug
+      - "traefik.enable=false"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

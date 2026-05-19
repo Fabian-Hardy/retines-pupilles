@@ -1,0 +1,81 @@
+site_name: "Rétines & Pupilles — Documentation"
+site_url: https://docs.retineetpupille.be
+site_description: "Documentation technique et utilisateur de l'ERP/CRM de Rétines & Pupilles"
+site_author: "Fabian Hardy"
+
+repo_name: retines-pupilles
+# repo_url: https://github.com/ton-org/retines-pupilles  # à activer si dépôt public
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: fr
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Passer en mode sombre
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Passer en mode clair
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: fr
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://retineetpupille.be
+
+nav:
+  - Accueil: 00-overview.md
+  - Architecture:
+    - Stack technique: architecture/stack.md
+    - Serveur & infrastructure: architecture/server.md
+    - Fusion des données (data-merge): architecture/data-merge.md
+  - Développement:
+    - Getting started (VMware): dev/getting-started.md
+    - Workflow Git: dev/git-workflow.md
+    - Variables d'environnement: dev/env-variables.md
+  - Déploiement:
+    - Migration serveur: deploy/migration.md
+    - Sauvegardes: deploy/backup.md
+  - Guide utilisateur:
+    - Guide Allyson: user/guide-allyson.md

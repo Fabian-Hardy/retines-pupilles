@@ -1,0 +1,53 @@
+# Traefik v3 — Configuration statique
+# Fichier monté en :ro dans le conteneur
+
+# Logging global
+log:
+  level: INFO
+
+# Access logs (optionnel — commenter en prod si volume élevé)
+accessLog: {}
+
+# API & Dashboard — désactivé en prod
+api:
+  dashboard: false
+  insecure: false
+
+# Points d'entrée réseau
+entryPoints:
+  http:
+    address: ":80"
+    # Redirection automatique HTTP → HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+          permanent: true
+
+  https:
+    address: ":443"
+    # HTTP/2 et HTTP/3 activés par défaut dans Traefik v3
+    http3: {}
+
+# Provider Docker
+providers:
+  docker:
+    # N'expose que les conteneurs avec traefik.enable=true
+    exposedByDefault: false
+    # Réseau Docker utilisé par Traefik pour joindre les conteneurs
+    network: proxy
+    # Watcher sur socket Docker
+    watch: true
+
+# Résolveur de certificats Let's Encrypt
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: fabian.hardy@trendyfoods.com
+      storage: /acme.json
+      # Challenge HTTP-01 (port 80 doit être accessible depuis internet)
+      httpChallenge:
+        entryPoint: http
+      # Décommenter pour utiliser le staging LE (tests) :
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
