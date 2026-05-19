@@ -120,20 +120,19 @@ Voir TASKS.md pour le détail :
 
 | Blocage | Ce qu'il faut | Priorité |
 |---|---|---|
-| ~~Réponses questionnaire Allyson~~ | ~~Fabian doit re-partager~~ | ✅ Levé |
+| ~~Questionnaire Allyson~~ | ~~Re-partager~~ | ✅ Levé |
+| ~~VM dev~~ | ~~Installer VMware + Ubuntu~~ | ✅ Levé |
+| ~~GitHub repo~~ | ~~Créer + CI/CD~~ | ✅ Levé |
 | A3 & A2 non remplis | Poser les questions à Allyson | 🟡 Moyen |
-| VM dev non installée | Fabian installe VMware + Ubuntu | 🟡 Moyen |
+| GitHub Secrets CI/CD | Configurer dans repo Settings | 🟡 Moyen |
 | DNS non configuré | Fabian → O2switch Zone Editor | 🟡 Moyen |
-| GitHub repo non créé | Créer retines-pupilles + GitHub Actions | 🟡 Moyen |
+| Traefik migration prod | Exécuter sur 204.168.202.176 | 🟡 Moyen |
+| Fichiers encore sur OneDrive | Migrer source de vérité → VM/GitHub | 🔴 Prochain |
 
-## Dernière session — 2026-05-19
+## Dernière session — 2026-05-19 (session 2)
 
-**Mode :** COWORK
+**Mode :** COWORK + infra
 
 ### Réalisé
-- Définition logique de fusion 4 cas (source + allyson_modified_fields)
-- Mise à jour rapport Word (philosophie données)
-- Documentation complète créée (10 fichiers docs/)
-- Infrastructure Docker + Traefik configurée
-- TASKS.md Sprint 1 rédigé
-- Agent monitor (dashboar
+- Intégration complète des réponses d'Allyson (15 captures → reponses-allyson.md)
+- An

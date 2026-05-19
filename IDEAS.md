@@ -48,6 +48,4 @@
 
 ---
 
-## ❌ Idées rejetées
-
-*(vide pour l'instant)*
+### IDEA-006 — Sortir les fichiers projet de Wi
