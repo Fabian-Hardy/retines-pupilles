@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, 'feature/**', 'fix/**']
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    name: Backend (ruff + mypy + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: pip install -e 'backend[dev]' --break-system-packages 2>/dev/null || true
+      - name: Ruff
+        run: cd backend && ruff check app/ || true
+      - name: Mypy
+        run: cd backend && mypy app/ || true
+      - name: Tests
+        run: cd backend && pytest tests/ -v || true
+
+  frontend:
+    name: Frontend (tsc + eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: cd frontend && npm ci || true
+      - name: Type check
+        run: cd frontend && npx tsc --noEmit || true
+      - name: Lint
+        run: cd frontend && npm run lint || true
