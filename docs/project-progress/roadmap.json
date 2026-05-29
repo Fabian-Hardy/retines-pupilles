@@ -56,19 +56,979 @@
   {
     "id": "TASK-010",
     "title": "Patient list filtering and pagination",
-    "phase": "Patient API",
-    "description": "Ajouter les filtres et la pagination sur la liste Patient."
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Add filtering, search, total count, and structured pagination to the Patient list API."
   },
   {
     "id": "TASK-011",
     "title": "Authentication foundation with Authlib",
-    "phase": "Security",
-    "description": "Préparer la fondation d'authentification avec Authlib."
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Prepare the authentication foundation with Authlib."
   },
   {
     "id": "TASK-012",
     "title": "Frontend application shell",
-    "phase": "Frontend",
-    "description": "Initialiser la structure React TypeScript côté frontend."
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Initialize the React TypeScript frontend shell."
+  },
+  {
+    "id": "TASK-013",
+    "title": "User model and migrations",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Add the User database model, role field, schemas, CRUD helpers, and Alembic migration."
+  },
+  {
+    "id": "TASK-014",
+    "title": "Password and credential handling",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Add password hashing and credential validation utilities."
+  },
+  {
+    "id": "TASK-015",
+    "title": "Login/logout/me API",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Add authentication endpoints for login, logout, and current user."
+  },
+  {
+    "id": "TASK-016",
+    "title": "Role-based access control",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Add role-based access control primitives."
+  },
+  {
+    "id": "TASK-017",
+    "title": "Protect Patient API with auth",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Require authenticated access and appropriate roles for Patient API endpoints."
+  },
+  {
+    "id": "TASK-018",
+    "title": "Standard API error contract",
+    "phase": "v0.2.0 Backend Patient security baseline",
+    "description": "Define and apply a consistent API error response contract."
+  },
+  {
+    "id": "TASK-019",
+    "title": "Frontend tooling and Docker build",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Add frontend linting, testing, build scripts, and Docker production build support."
+  },
+  {
+    "id": "TASK-020",
+    "title": "Typed API client",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Add a typed frontend API client for backend integration."
+  },
+  {
+    "id": "TASK-021",
+    "title": "Login/logout frontend",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement frontend authentication screens and session handling."
+  },
+  {
+    "id": "TASK-022",
+    "title": "Patient list page",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement patient list, search, filters, and pagination UI."
+  },
+  {
+    "id": "TASK-023",
+    "title": "Patient detail page",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement patient detail view."
+  },
+  {
+    "id": "TASK-024",
+    "title": "Patient create form",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement patient creation form with validation."
+  },
+  {
+    "id": "TASK-025",
+    "title": "Patient edit form",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement patient editing form with validation."
+  },
+  {
+    "id": "TASK-026",
+    "title": "Patient archive/delete flow",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Implement controlled patient archive or delete workflow."
+  },
+  {
+    "id": "TASK-027",
+    "title": "Frontend smoke tests",
+    "phase": "v0.3.0 Frontend Patient MVP",
+    "description": "Add smoke tests for the core frontend patient flow."
+  },
+  {
+    "id": "TASK-028",
+    "title": "Optical prescription model",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement optical prescription model."
+  },
+  {
+    "id": "TASK-029",
+    "title": "Prescription Alembic migration",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription alembic migration."
+  },
+  {
+    "id": "TASK-030",
+    "title": "Prescription schemas",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription schemas."
+  },
+  {
+    "id": "TASK-031",
+    "title": "Prescription CRUD helpers",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription crud helpers."
+  },
+  {
+    "id": "TASK-032",
+    "title": "Prescription API endpoints",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription api endpoints."
+  },
+  {
+    "id": "TASK-033",
+    "title": "Prescription frontend patient tab",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription frontend patient tab."
+  },
+  {
+    "id": "TASK-034",
+    "title": "Prescription validation rules",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription validation rules."
+  },
+  {
+    "id": "TASK-035",
+    "title": "Prescription history view",
+    "phase": "v0.4.0 Optical prescriptions",
+    "description": "Implement prescription history view."
+  },
+  {
+    "id": "TASK-036",
+    "title": "Quote model",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement quote model."
+  },
+  {
+    "id": "TASK-037",
+    "title": "Quote line model",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement quote line model."
+  },
+  {
+    "id": "TASK-038",
+    "title": "Sales order model",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement sales order model."
+  },
+  {
+    "id": "TASK-039",
+    "title": "Order status lifecycle",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement order status lifecycle."
+  },
+  {
+    "id": "TASK-040",
+    "title": "Quote/order API endpoints",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement quote/order api endpoints."
+  },
+  {
+    "id": "TASK-041",
+    "title": "Quote/order frontend",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement quote/order frontend."
+  },
+  {
+    "id": "TASK-042",
+    "title": "Convert quote to order",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement convert quote to order."
+  },
+  {
+    "id": "TASK-043",
+    "title": "Order printable summary",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement order printable summary."
+  },
+  {
+    "id": "TASK-044",
+    "title": "Order search and filtering",
+    "phase": "v0.5.0 Quotes and sales orders",
+    "description": "Implement order search and filtering."
+  },
+  {
+    "id": "TASK-045",
+    "title": "Product catalog model",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement product catalog model."
+  },
+  {
+    "id": "TASK-046",
+    "title": "Product category model",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement product category model."
+  },
+  {
+    "id": "TASK-047",
+    "title": "Brand model",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement brand model."
+  },
+  {
+    "id": "TASK-048",
+    "title": "Supplier model",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement supplier model."
+  },
+  {
+    "id": "TASK-049",
+    "title": "Product API endpoints",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement product api endpoints."
+  },
+  {
+    "id": "TASK-050",
+    "title": "Product frontend pages",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement product frontend pages."
+  },
+  {
+    "id": "TASK-051",
+    "title": "Stock movement model",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement stock movement model."
+  },
+  {
+    "id": "TASK-052",
+    "title": "Stock adjustment API",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement stock adjustment api."
+  },
+  {
+    "id": "TASK-053",
+    "title": "Low-stock alerts",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement low-stock alerts."
+  },
+  {
+    "id": "TASK-054",
+    "title": "Supplier order draft",
+    "phase": "v0.6.0 Product catalog, suppliers, and stock",
+    "description": "Implement supplier order draft."
+  },
+  {
+    "id": "TASK-055",
+    "title": "Document metadata model",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document metadata model."
+  },
+  {
+    "id": "TASK-056",
+    "title": "Secure file storage strategy",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement secure file storage strategy."
+  },
+  {
+    "id": "TASK-057",
+    "title": "Document upload API",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document upload api."
+  },
+  {
+    "id": "TASK-058",
+    "title": "Document download API",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document download api."
+  },
+  {
+    "id": "TASK-059",
+    "title": "Document delete/archive API",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document delete/archive api."
+  },
+  {
+    "id": "TASK-060",
+    "title": "Document frontend tab",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document frontend tab."
+  },
+  {
+    "id": "TASK-061",
+    "title": "File type and size validation",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement file type and size validation."
+  },
+  {
+    "id": "TASK-062",
+    "title": "Document access audit",
+    "phase": "v0.7.0 Patient documents",
+    "description": "Implement document access audit."
+  },
+  {
+    "id": "TASK-063",
+    "title": "Legacy import architecture",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement legacy import architecture."
+  },
+  {
+    "id": "TASK-064",
+    "title": "DBF reader",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement dbf reader."
+  },
+  {
+    "id": "TASK-065",
+    "title": "Encoding detection",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement encoding detection."
+  },
+  {
+    "id": "TASK-066",
+    "title": "Legacy patient mapping",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement legacy patient mapping."
+  },
+  {
+    "id": "TASK-067",
+    "title": "Duplicate detection",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement duplicate detection."
+  },
+  {
+    "id": "TASK-068",
+    "title": "Import dry-run mode",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement import dry-run mode."
+  },
+  {
+    "id": "TASK-069",
+    "title": "Import reconciliation report",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement import reconciliation report."
+  },
+  {
+    "id": "TASK-070",
+    "title": "Import CLI command",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement import cli command."
+  },
+  {
+    "id": "TASK-071",
+    "title": "Import anonymized fixtures",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement import anonymized fixtures."
+  },
+  {
+    "id": "TASK-072",
+    "title": "Import production runbook",
+    "phase": "v0.8.0 Legacy data import",
+    "description": "Implement import production runbook."
+  },
+  {
+    "id": "TASK-073",
+    "title": "Audit log model",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement audit log model."
+  },
+  {
+    "id": "TASK-074",
+    "title": "Audit middleware/service",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement audit middleware/service."
+  },
+  {
+    "id": "TASK-075",
+    "title": "Audit admin view",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement audit admin view."
+  },
+  {
+    "id": "TASK-076",
+    "title": "Rate limiting with Redis",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement rate limiting with redis."
+  },
+  {
+    "id": "TASK-077",
+    "title": "CORS and security headers hardening",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement cors and security headers hardening."
+  },
+  {
+    "id": "TASK-078",
+    "title": "Session/token hardening",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement session/token hardening."
+  },
+  {
+    "id": "TASK-079",
+    "title": "User access review screen",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement user access review screen."
+  },
+  {
+    "id": "TASK-080",
+    "title": "Patient data export",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement patient data export."
+  },
+  {
+    "id": "TASK-081",
+    "title": "Data rectification workflow",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement data rectification workflow."
+  },
+  {
+    "id": "TASK-082",
+    "title": "Data archive/anonymization workflow",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement data archive/anonymization workflow."
+  },
+  {
+    "id": "TASK-083",
+    "title": "Privacy notice documentation",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement privacy notice documentation."
+  },
+  {
+    "id": "TASK-084",
+    "title": "Processing register documentation",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement processing register documentation."
+  },
+  {
+    "id": "TASK-085",
+    "title": "Backup encryption policy",
+    "phase": "v0.9.0 Security, privacy, and compliance baseline",
+    "description": "Implement backup encryption policy."
+  },
+  {
+    "id": "TASK-086",
+    "title": "Production deployment checklist",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement production deployment checklist."
+  },
+  {
+    "id": "TASK-087",
+    "title": "Database migration release process",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement database migration release process."
+  },
+  {
+    "id": "TASK-088",
+    "title": "Automated encrypted backups",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement automated encrypted backups."
+  },
+  {
+    "id": "TASK-089",
+    "title": "Restore drill",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement restore drill."
+  },
+  {
+    "id": "TASK-090",
+    "title": "Health checks",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement health checks."
+  },
+  {
+    "id": "TASK-091",
+    "title": "Structured logging",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement structured logging."
+  },
+  {
+    "id": "TASK-092",
+    "title": "Monitoring and alerts",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement monitoring and alerts."
+  },
+  {
+    "id": "TASK-093",
+    "title": "Admin documentation",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement admin documentation."
+  },
+  {
+    "id": "TASK-094",
+    "title": "User documentation",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement user documentation."
+  },
+  {
+    "id": "TASK-095",
+    "title": "End-to-end critical path tests",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement end-to-end critical path tests."
+  },
+  {
+    "id": "TASK-096",
+    "title": "User acceptance testing",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement user acceptance testing."
+  },
+  {
+    "id": "TASK-097",
+    "title": "Production launch",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement production launch."
+  },
+  {
+    "id": "TASK-098",
+    "title": "Post-launch stabilization",
+    "phase": "v1.0.0 Stable production release",
+    "description": "Implement post-launch stabilization."
+  },
+  {
+    "id": "TASK-099",
+    "title": "Post-launch bugfix batch",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement post-launch bugfix batch."
+  },
+  {
+    "id": "TASK-100",
+    "title": "UX improvements from real use",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement ux improvements from real use."
+  },
+  {
+    "id": "TASK-101",
+    "title": "Faster patient search",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement faster patient search."
+  },
+  {
+    "id": "TASK-102",
+    "title": "Better order filters",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement better order filters."
+  },
+  {
+    "id": "TASK-103",
+    "title": "Export patient summary PDF",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement export patient summary pdf."
+  },
+  {
+    "id": "TASK-104",
+    "title": "Export order summary PDF",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement export order summary pdf."
+  },
+  {
+    "id": "TASK-105",
+    "title": "Admin dashboard v1",
+    "phase": "v1.1.0 Field stabilization and reporting",
+    "description": "Implement admin dashboard v1."
+  },
+  {
+    "id": "TASK-106",
+    "title": "Payment tracking model",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement payment tracking model."
+  },
+  {
+    "id": "TASK-107",
+    "title": "Deposit and balance fields",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement deposit and balance fields."
+  },
+  {
+    "id": "TASK-108",
+    "title": "Payment status workflow",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement payment status workflow."
+  },
+  {
+    "id": "TASK-109",
+    "title": "Payment frontend",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement payment frontend."
+  },
+  {
+    "id": "TASK-110",
+    "title": "Daily sales export",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement daily sales export."
+  },
+  {
+    "id": "TASK-111",
+    "title": "Accounting export v1",
+    "phase": "v1.2.0 Payment tracking and accounting exports",
+    "description": "Implement accounting export v1."
+  },
+  {
+    "id": "TASK-112",
+    "title": "Email notification foundation",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement email notification foundation."
+  },
+  {
+    "id": "TASK-113",
+    "title": "Order ready notification",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement order ready notification."
+  },
+  {
+    "id": "TASK-114",
+    "title": "Appointment reminder notification",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement appointment reminder notification."
+  },
+  {
+    "id": "TASK-115",
+    "title": "Notification templates",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement notification templates."
+  },
+  {
+    "id": "TASK-116",
+    "title": "Notification opt-in/opt-out",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement notification opt-in/opt-out."
+  },
+  {
+    "id": "TASK-117",
+    "title": "Notification audit log",
+    "phase": "v1.3.0 Customer communication",
+    "description": "Implement notification audit log."
+  },
+  {
+    "id": "TASK-118",
+    "title": "Appointment calendar view",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement appointment calendar view."
+  },
+  {
+    "id": "TASK-119",
+    "title": "Appointment status workflow",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement appointment status workflow."
+  },
+  {
+    "id": "TASK-120",
+    "title": "Staff availability model",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement staff availability model."
+  },
+  {
+    "id": "TASK-121",
+    "title": "Appointment conflict detection",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement appointment conflict detection."
+  },
+  {
+    "id": "TASK-122",
+    "title": "Appointment reminders",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement appointment reminders."
+  },
+  {
+    "id": "TASK-123",
+    "title": "Appointment analytics",
+    "phase": "v1.4.0 Advanced appointments",
+    "description": "Implement appointment analytics."
+  },
+  {
+    "id": "TASK-124",
+    "title": "Inventory valuation fields",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement inventory valuation fields."
+  },
+  {
+    "id": "TASK-125",
+    "title": "Supplier order workflow",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement supplier order workflow."
+  },
+  {
+    "id": "TASK-126",
+    "title": "Reception of supplier orders",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement reception of supplier orders."
+  },
+  {
+    "id": "TASK-127",
+    "title": "Stock discrepancy reports",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement stock discrepancy reports."
+  },
+  {
+    "id": "TASK-128",
+    "title": "Product barcode/reference search",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement product barcode/reference search."
+  },
+  {
+    "id": "TASK-129",
+    "title": "Stock export",
+    "phase": "v1.5.0 Advanced inventory",
+    "description": "Implement stock export."
+  },
+  {
+    "id": "TASK-130",
+    "title": "Sales dashboard",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement sales dashboard."
+  },
+  {
+    "id": "TASK-131",
+    "title": "Patient activity dashboard",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement patient activity dashboard."
+  },
+  {
+    "id": "TASK-132",
+    "title": "Product performance report",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement product performance report."
+  },
+  {
+    "id": "TASK-133",
+    "title": "Prescription activity report",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement prescription activity report."
+  },
+  {
+    "id": "TASK-134",
+    "title": "Exportable CSV reports",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement exportable csv reports."
+  },
+  {
+    "id": "TASK-135",
+    "title": "Date-range analytics",
+    "phase": "v1.6.0 Business reporting",
+    "description": "Implement date-range analytics."
+  },
+  {
+    "id": "TASK-136",
+    "title": "Test coverage thresholds",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement test coverage thresholds."
+  },
+  {
+    "id": "TASK-137",
+    "title": "Regression test suite",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement regression test suite."
+  },
+  {
+    "id": "TASK-138",
+    "title": "Dependency update workflow",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement dependency update workflow."
+  },
+  {
+    "id": "TASK-139",
+    "title": "Security scan automation",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement security scan automation."
+  },
+  {
+    "id": "TASK-140",
+    "title": "Backup retention automation",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement backup retention automation."
+  },
+  {
+    "id": "TASK-141",
+    "title": "Database maintenance tasks",
+    "phase": "v1.7.0 Long-term maintenance baseline",
+    "description": "Implement database maintenance tasks."
+  },
+  {
+    "id": "TASK-142",
+    "title": "Organization/store model",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement organization/store model."
+  },
+  {
+    "id": "TASK-143",
+    "title": "Store-scoped patients",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement store-scoped patients."
+  },
+  {
+    "id": "TASK-144",
+    "title": "Store-scoped users and roles",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement store-scoped users and roles."
+  },
+  {
+    "id": "TASK-145",
+    "title": "Store-scoped stock",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement store-scoped stock."
+  },
+  {
+    "id": "TASK-146",
+    "title": "Store-scoped orders",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement store-scoped orders."
+  },
+  {
+    "id": "TASK-147",
+    "title": "Cross-store admin role",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement cross-store admin role."
+  },
+  {
+    "id": "TASK-148",
+    "title": "Data migration to store scope",
+    "phase": "v2.0.0 Multi-store architecture",
+    "description": "Implement data migration to store scope."
+  },
+  {
+    "id": "TASK-149",
+    "title": "Supplier integration architecture",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement supplier integration architecture."
+  },
+  {
+    "id": "TASK-150",
+    "title": "Accounting software connector",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement accounting software connector."
+  },
+  {
+    "id": "TASK-151",
+    "title": "Calendar external sync",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement calendar external sync."
+  },
+  {
+    "id": "TASK-152",
+    "title": "Import/export API keys",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement import/export api keys."
+  },
+  {
+    "id": "TASK-153",
+    "title": "Integration audit log",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement integration audit log."
+  },
+  {
+    "id": "TASK-154",
+    "title": "Integration failure dashboard",
+    "phase": "v2.1.0 External integrations",
+    "description": "Implement integration failure dashboard."
+  },
+  {
+    "id": "TASK-155",
+    "title": "Responsive tablet layout",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement responsive tablet layout."
+  },
+  {
+    "id": "TASK-156",
+    "title": "PWA manifest",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement pwa manifest."
+  },
+  {
+    "id": "TASK-157",
+    "title": "Offline-safe read-only cache",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement offline-safe read-only cache."
+  },
+  {
+    "id": "TASK-158",
+    "title": "Touch-friendly patient forms",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement touch-friendly patient forms."
+  },
+  {
+    "id": "TASK-159",
+    "title": "Camera document capture",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement camera document capture."
+  },
+  {
+    "id": "TASK-160",
+    "title": "Mobile smoke tests",
+    "phase": "v2.2.0 PWA and tablet usage",
+    "description": "Implement mobile smoke tests."
+  },
+  {
+    "id": "TASK-161",
+    "title": "Task/reminder model",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement task/reminder model."
+  },
+  {
+    "id": "TASK-162",
+    "title": "Internal task assignment",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement internal task assignment."
+  },
+  {
+    "id": "TASK-163",
+    "title": "Follow-up reminders",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement follow-up reminders."
+  },
+  {
+    "id": "TASK-164",
+    "title": "Order delay alerts",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement order delay alerts."
+  },
+  {
+    "id": "TASK-165",
+    "title": "Patient follow-up workflows",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement patient follow-up workflows."
+  },
+  {
+    "id": "TASK-166",
+    "title": "Staff notification center",
+    "phase": "v2.3.0 Operational automation",
+    "description": "Implement staff notification center."
+  },
+  {
+    "id": "TASK-167",
+    "title": "OCR pipeline architecture",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement ocr pipeline architecture."
+  },
+  {
+    "id": "TASK-168",
+    "title": "Prescription document OCR",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement prescription document ocr."
+  },
+  {
+    "id": "TASK-169",
+    "title": "Human validation queue",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement human validation queue."
+  },
+  {
+    "id": "TASK-170",
+    "title": "OCR confidence scoring",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement ocr confidence scoring."
+  },
+  {
+    "id": "TASK-171",
+    "title": "OCR audit trail",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement ocr audit trail."
+  },
+  {
+    "id": "TASK-172",
+    "title": "OCR privacy/security review",
+    "phase": "v3.0.0 Assisted document intelligence",
+    "description": "Implement ocr privacy/security review."
   }
 ]
