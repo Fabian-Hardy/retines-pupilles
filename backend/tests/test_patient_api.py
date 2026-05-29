@@ -1,19 +1,18 @@
 """Tests for Patient API endpoints."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.endpoints import patients as patient_endpoints
 from app.db.session import get_db
 from app.main import app
 from app.models.patient import Patient
-from app.schemas.patient import PatientCreate
+from app.schemas.patient import PatientCreate, PatientUpdate
 
 
 class SessionDouble:
@@ -52,7 +51,7 @@ def build_patient(
 
 
 @pytest.fixture(autouse=True)
-def override_db_dependency() -> AsyncIterator[SessionDouble]:
+def override_db_dependency() -> Iterator[SessionDouble]:
     session = SessionDouble()
 
     async def get_test_db() -> AsyncIterator[SessionDouble]:
@@ -82,7 +81,7 @@ async def test_create_patient_endpoint_returns_created_patient(
     created_patient = build_patient()
 
     async def create_patient_stub(
-        session: AsyncSession,
+        session: object,
         patient_in: PatientCreate,
     ) -> Patient:
         assert patient_in.first_name == "Jeanne"
@@ -121,7 +120,7 @@ async def test_get_patient_endpoint_returns_patient(
     patient_id = uuid4()
     patient = build_patient(patient_id=patient_id)
 
-    async def get_patient_stub(session: AsyncSession, requested_id: UUID) -> Patient | None:
+    async def get_patient_stub(session: object, requested_id: UUID) -> Patient | None:
         assert requested_id == patient_id
         return patient
 
@@ -141,7 +140,7 @@ async def test_get_patient_endpoint_returns_404_when_missing(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def get_patient_stub(session: AsyncSession, requested_id: UUID) -> None:
+    async def get_patient_stub(session: object, requested_id: UUID) -> None:
         return None
 
     monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
@@ -153,6 +152,150 @@ async def test_get_patient_endpoint_returns_404_when_missing(
 
 
 @pytest.mark.asyncio
+async def test_update_patient_endpoint_updates_patient(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    patient_id = uuid4()
+    patient = build_patient(patient_id=patient_id)
+
+    async def get_patient_stub(
+        session: object,
+        requested_id: UUID,
+    ) -> Patient | None:
+        assert session is override_db_dependency
+        assert requested_id == patient_id
+        return patient
+
+    async def update_patient_stub(
+        session: object,
+        patient_to_update: Patient,
+        patient_in: PatientUpdate,
+    ) -> Patient:
+        assert session is override_db_dependency
+        assert patient_to_update is patient
+        assert patient_in.city == "Liege"
+
+        patient.city = patient_in.city
+        return patient
+
+    monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
+    monkeypatch.setattr(patient_endpoints, "update_patient", update_patient_stub)
+
+    response = await client.patch(
+        f"/api/v1/patients/{patient_id}",
+        json={"city": "Liege"},
+    )
+
+    assert response.status_code == 200
+    assert override_db_dependency.committed is True
+
+    body = response.json()
+    assert body["id"] == str(patient_id)
+    assert body["city"] == "Liege"
+
+
+@pytest.mark.asyncio
+async def test_update_patient_endpoint_returns_404_when_missing(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    async def get_patient_stub(
+        session: object,
+        requested_id: UUID,
+    ) -> None:
+        return None
+
+    async def update_patient_stub(
+        session: object,
+        patient_to_update: Patient,
+        patient_in: PatientUpdate,
+    ) -> Patient:
+        pytest.fail("update_patient should not be called when patient is missing")
+
+    monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
+    monkeypatch.setattr(patient_endpoints, "update_patient", update_patient_stub)
+
+    response = await client.patch(
+        f"/api/v1/patients/{uuid4()}",
+        json={"city": "Liege"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Patient not found"}
+    assert override_db_dependency.committed is False
+
+
+@pytest.mark.asyncio
+async def test_delete_patient_endpoint_deletes_patient(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    patient_id = uuid4()
+    patient = build_patient(patient_id=patient_id)
+    deleted = False
+
+    async def get_patient_stub(
+        session: object,
+        requested_id: UUID,
+    ) -> Patient | None:
+        assert session is override_db_dependency
+        assert requested_id == patient_id
+        return patient
+
+    async def delete_patient_stub(
+        session: object,
+        patient_to_delete: Patient,
+    ) -> None:
+        nonlocal deleted
+
+        assert session is override_db_dependency
+        assert patient_to_delete is patient
+        deleted = True
+
+    monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
+    monkeypatch.setattr(patient_endpoints, "delete_patient", delete_patient_stub)
+
+    response = await client.delete(f"/api/v1/patients/{patient_id}")
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert deleted is True
+    assert override_db_dependency.committed is True
+
+
+@pytest.mark.asyncio
+async def test_delete_patient_endpoint_returns_404_when_missing(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    async def get_patient_stub(
+        session: object,
+        requested_id: UUID,
+    ) -> None:
+        return None
+
+    async def delete_patient_stub(
+        session: object,
+        patient_to_delete: Patient,
+    ) -> None:
+        pytest.fail("delete_patient should not be called when patient is missing")
+
+    monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
+    monkeypatch.setattr(patient_endpoints, "delete_patient", delete_patient_stub)
+
+    response = await client.delete(f"/api/v1/patients/{uuid4()}")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Patient not found"}
+    assert override_db_dependency.committed is False
+
+
+@pytest.mark.asyncio
 async def test_list_patients_endpoint_returns_patients(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
@@ -161,7 +304,7 @@ async def test_list_patients_endpoint_returns_patients(
     second_patient = build_patient(first_name="Louis", last_name="Martin")
 
     async def list_patients_stub(
-        session: AsyncSession,
+        session: object,
         *,
         offset: int = 0,
         limit: int = 100,
