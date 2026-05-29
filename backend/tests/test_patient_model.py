@@ -1,8 +1,9 @@
 """Tests for the Patient SQLAlchemy ORM model."""
 
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, Date, String
+from sqlalchemy import CheckConstraint, Date, String, Table
 
 from app.db.base import Base
 from app.models.patient import Patient
@@ -14,9 +15,11 @@ def test_patient_model_uses_expected_table_and_base_metadata() -> None:
 
 
 def test_patient_model_defines_technical_columns() -> None:
-    id_column = Patient.__table__.c.id
-    created_at_column = Patient.__table__.c.created_at
-    updated_at_column = Patient.__table__.c.updated_at
+    patient_table = cast(Table, Patient.__table__)
+
+    id_column = patient_table.c.id
+    created_at_column = patient_table.c.created_at
+    updated_at_column = patient_table.c.updated_at
 
     assert id_column.primary_key is True
     assert id_column.nullable is False
@@ -32,16 +35,21 @@ def test_patient_model_defines_technical_columns() -> None:
 
 
 def test_patient_model_defines_required_identity_columns() -> None:
-    first_name_column = Patient.__table__.c.first_name
-    last_name_column = Patient.__table__.c.last_name
-    date_of_birth_column = Patient.__table__.c.date_of_birth
+    patient_table = cast(Table, Patient.__table__)
+
+    first_name_column = patient_table.c.first_name
+    last_name_column = patient_table.c.last_name
+    date_of_birth_column = patient_table.c.date_of_birth
+
+    first_name_type = cast(String, first_name_column.type)
+    last_name_type = cast(String, last_name_column.type)
 
     assert isinstance(first_name_column.type, String)
-    assert first_name_column.type.length == 100
+    assert first_name_type.length == 100
     assert first_name_column.nullable is False
 
     assert isinstance(last_name_column.type, String)
-    assert last_name_column.type.length == 100
+    assert last_name_type.length == 100
     assert last_name_column.nullable is False
 
     assert isinstance(date_of_birth_column.type, Date)
@@ -49,48 +57,62 @@ def test_patient_model_defines_required_identity_columns() -> None:
 
 
 def test_patient_model_defines_contact_and_address_columns() -> None:
-    columns = Patient.__table__.c
+    patient_table = cast(Table, Patient.__table__)
+    columns = patient_table.c
 
-    assert columns.email.type.length == 254
+    email_type = cast(String, columns.email.type)
+    phone_type = cast(String, columns.phone.type)
+    street_line1_type = cast(String, columns.street_line1.type)
+    street_line2_type = cast(String, columns.street_line2.type)
+    postal_code_type = cast(String, columns.postal_code.type)
+    city_type = cast(String, columns.city.type)
+    country_code_type = cast(String, columns.country_code.type)
+
+    assert email_type.length == 254
     assert columns.email.nullable is True
 
-    assert columns.phone.type.length == 32
+    assert phone_type.length == 32
     assert columns.phone.nullable is True
 
-    assert columns.street_line1.type.length == 255
+    assert street_line1_type.length == 255
     assert columns.street_line1.nullable is True
 
-    assert columns.street_line2.type.length == 255
+    assert street_line2_type.length == 255
     assert columns.street_line2.nullable is True
 
-    assert columns.postal_code.type.length == 16
+    assert postal_code_type.length == 16
     assert columns.postal_code.nullable is True
 
-    assert columns.city.type.length == 100
+    assert city_type.length == 100
     assert columns.city.nullable is True
 
-    assert columns.country_code.type.length == 2
+    assert country_code_type.length == 2
     assert columns.country_code.nullable is False
     assert columns.country_code.default is not None
     assert columns.country_code.server_default is not None
 
 
 def test_patient_model_defines_localization_column() -> None:
-    preferred_language_column = Patient.__table__.c.preferred_language
+    patient_table = cast(Table, Patient.__table__)
 
-    assert preferred_language_column.type.length == 5
+    preferred_language_column = patient_table.c.preferred_language
+    preferred_language_type = cast(String, preferred_language_column.type)
+
+    assert preferred_language_type.length == 5
     assert preferred_language_column.nullable is False
     assert preferred_language_column.default is not None
     assert preferred_language_column.server_default is not None
 
 
 def test_patient_model_defines_minimal_constraints_and_indexes() -> None:
+    patient_table = cast(Table, Patient.__table__)
+
     check_constraint_names = {
         constraint.name
-        for constraint in Patient.__table__.constraints
-        if isinstance(constraint, CheckConstraint)
+        for constraint in patient_table.constraints
+        if isinstance(constraint, CheckConstraint) and constraint.name is not None
     }
-    index_names = {index.name for index in Patient.__table__.indexes}
+    index_names = {index.name for index in patient_table.indexes if index.name is not None}
 
     assert "ck_patients_first_name_not_blank" in check_constraint_names
     assert "ck_patients_last_name_not_blank" in check_constraint_names
