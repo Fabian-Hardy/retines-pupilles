@@ -49,8 +49,11 @@ jobs:
 
       - name: Install Codex CLI
         run: |
-          npm install -g @openai/codex@latest
-          npm install -g @openai/codex-linux-x64 || true
+          # Pin Codex CLI instead of using @latest.
+          # A previous successful run used v0.134.0, while v0.135.0 returned 401 Unauthorized.
+          npm install -g @openai/codex@0.134.0
+          npm install -g @openai/codex-linux-x64@0.134.0 || true
+          codex --version
 
       - name: Resolve task file
         run: |
