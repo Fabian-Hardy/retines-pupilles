@@ -1,0 +1,51 @@
+[
+  {
+    "number": 1,
+    "title": "feat(backend): add FastAPI skeleton - TASK-001",
+    "merged_at": "2026-05-29T10:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/1",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 2,
+    "title": "feat(backend): add persistence foundation - TASK-002",
+    "merged_at": "2026-05-29T11:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/2",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 3,
+    "title": "feat(backend): add domain base models - TASK-003",
+    "merged_at": "2026-05-29T12:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/3",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 4,
+    "title": "feat(backend): add patient model - TASK-004",
+    "merged_at": "2026-05-29T13:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/4",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 5,
+    "title": "feat(backend): add patient schemas - TASK-005",
+    "merged_at": "2026-05-29T14:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/5",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 6,
+    "title": "feat(backend): add patient CRUD helpers - TASK-006",
+    "merged_at": "2026-05-29T15:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/6",
+    "user": { "login": "Fabian-Hardy" }
+  },
+  {
+    "number": 7,
+    "title": "feat(backend): add patient API endpoints - TASK-007",
+    "merged_at": "2026-05-29T16:00:00Z",
+    "html_url": "https://github.com/Fabian-Hardy/retines-pupilles/pull/7",
+    "user": { "login": "Fabian-Hardy" }
+  }
+]
