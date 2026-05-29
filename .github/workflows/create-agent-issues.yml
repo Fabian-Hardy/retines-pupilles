@@ -1,0 +1,193 @@
+name: Create Agent Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_file:
+        description: "Path to the JSON batch file to import"
+        required: true
+        default: "docs/agent-queue/issues-batch-01.json"
+      apply_ready_label:
+        description: "Also apply status:ready-for-codex label"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: create-agent-issues
+  cancel-in-progress: false
+
+jobs:
+  create-issues:
+    name: Create issues from batch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate batch file exists
+        run: |
+          test -f "${{ inputs.batch_file }}"
+
+      - name: Create missing issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = '${{ inputs.batch_file }}';
+            const applyReadyLabel = '${{ inputs.apply_ready_label }}' === 'true';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const payload = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+            if (!Array.isArray(payload)) {
+              throw new Error('Batch file must contain a JSON array.');
+            }
+
+            const backendValidation = [
+              '```powershell',
+              'docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend ruff check .',
+              'docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend mypy app tests --show-traceback',
+              'docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm backend pytest',
+              '```',
+            ].join('\n');
+
+            const frontendValidation = [
+              '```powershell',
+              'docker compose -f docker-compose.yml -f docker-compose.dev.yml build frontend',
+              '```',
+              '',
+              'If frontend scripts exist for this task, run the relevant `npm run build`, `npm run lint`, `npm run test`, or type-check command through Docker or the documented local command.',
+            ].join('\n');
+
+            function validationBlock(kind) {
+              if (kind === 'backend') return backendValidation;
+              if (kind === 'frontend') return frontendValidation;
+              return 'Documentation/process change. Verify Markdown rendering and confirm no secrets are committed.';
+            }
+
+            function issueBody(item) {
+              const dependencies = (item.dependencies || []).length
+                ? item.dependencies.map((dep) => `- ${dep}`).join('\n')
+                : '- None';
+              const files = (item.files || []).map((file) => `- \`${file}\``).join('\n') || '- Not specified';
+              const acceptance = (item.acceptance || []).map((line) => `- ${line}`).join('\n') || '- Not specified';
+
+              return [
+                '## Version cible',
+                item.version || 'Unassigned',
+                '',
+                '## Agent',
+                'Codex',
+                '',
+                '## Branche attendue',
+                `\`${item.branch}\``,
+                '',
+                '## Base branch',
+                '`develop`',
+                '',
+                '## Dépendances',
+                dependencies,
+                '',
+                '## Objectif',
+                item.objective || item.title,
+                '',
+                '## Fichiers probables',
+                files,
+                '',
+                '## Critères d’acceptation',
+                acceptance,
+                '',
+                '## Validation attendue',
+                validationBlock(item.validation),
+                '',
+                '## Contraintes',
+                '- Ne pas modifier `main` ou `develop` directement.',
+                '- Travailler uniquement sur la branche attendue.',
+                '- Garder la PR limitée à cette tâche.',
+                '- Ne pas ajouter de secrets ou de données sensibles.',
+                '- PR vers `develop` uniquement.',
+              ].join('\n');
+            }
+
+            async function existingIssueFor(taskId) {
+              const query = `repo:${owner}/${repo} in:title ${taskId} type:issue`;
+              const result = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 10 });
+              return result.data.items.find((item) => item.title.includes(taskId));
+            }
+
+            async function ensureLabels(names) {
+              const existing = await github.paginate(github.rest.issues.listLabelsForRepo, {
+                owner,
+                repo,
+                per_page: 100,
+              });
+              const existingNames = new Set(existing.map((label) => label.name));
+
+              for (const name of names) {
+                if (existingNames.has(name)) continue;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name,
+                  color: 'ededed',
+                });
+                existingNames.add(name);
+              }
+            }
+
+            const allLabels = new Set(['agent:codex', 'status:planned']);
+            if (applyReadyLabel) allLabels.add('status:ready-for-codex');
+            for (const item of payload) {
+              if (item.version) allLabels.add(`version:${item.version}`);
+              if (item.type) allLabels.add(`type:${item.type}`);
+              if (item.risk) allLabels.add(`risk:${item.risk}`);
+            }
+            await ensureLabels([...allLabels]);
+
+            const created = [];
+            const skipped = [];
+
+            for (const item of payload) {
+              if (!item.id || !item.title) {
+                throw new Error(`Invalid item: ${JSON.stringify(item)}`);
+              }
+
+              const existing = await existingIssueFor(item.id);
+              if (existing) {
+                skipped.push(`${item.id} -> #${existing.number}`);
+                continue;
+              }
+
+              const labels = ['agent:codex', 'status:planned'];
+              if (applyReadyLabel) labels.push('status:ready-for-codex');
+              if (item.version) labels.push(`version:${item.version}`);
+              if (item.type) labels.push(`type:${item.type}`);
+              if (item.risk) labels.push(`risk:${item.risk}`);
+
+              const title = `${item.id} — ${item.title}`;
+              const createdIssue = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body: issueBody(item),
+                labels,
+              });
+
+              created.push(`${item.id} -> #${createdIssue.data.number}`);
+            }
+
+            core.summary
+              .addHeading('Agent issue creation summary')
+              .addHeading('Created', 2)
+              .addList(created.length ? created : ['None'])
+              .addHeading('Skipped existing', 2)
+              .addList(skipped.length ? skipped : ['None'])
+              .write();
+
+            console.log(`Created ${created.length} issue(s). Skipped ${skipped.length} existing issue(s).`);
