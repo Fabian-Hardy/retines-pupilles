@@ -3,12 +3,18 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.patient import create_patient, get_patient, list_patients
+from app.crud.patient import (
+    create_patient,
+    delete_patient,
+    get_patient,
+    list_patients,
+    update_patient,
+)
 from app.db.session import get_db
-from app.schemas.patient import PatientCreate, PatientRead
+from app.schemas.patient import PatientCreate, PatientRead, PatientUpdate
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
@@ -44,6 +50,49 @@ async def get_patient_endpoint(
         )
 
     return PatientRead.model_validate(patient)
+
+
+@router.patch("/{patient_id}", response_model=PatientRead)
+async def update_patient_endpoint(
+    patient_id: UUID,
+    patient_in: PatientUpdate,
+    session: DbSession,
+) -> PatientRead:
+    """Partially update a patient."""
+
+    patient = await get_patient(session, patient_id)
+
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+
+    updated_patient = await update_patient(session, patient, patient_in)
+    await session.commit()
+
+    return PatientRead.model_validate(updated_patient)
+
+
+@router.delete("/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_patient_endpoint(
+    patient_id: UUID,
+    session: DbSession,
+) -> Response:
+    """Delete a patient."""
+
+    patient = await get_patient(session, patient_id)
+
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+
+    await delete_patient(session, patient)
+    await session.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("", response_model=list[PatientRead])
