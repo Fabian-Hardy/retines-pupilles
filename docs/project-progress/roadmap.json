@@ -1,0 +1,74 @@
+[
+  {
+    "id": "TASK-001",
+    "title": "FastAPI skeleton",
+    "phase": "Backend foundation",
+    "description": "Initialiser la structure FastAPI minimale."
+  },
+  {
+    "id": "TASK-002",
+    "title": "Persistence foundation",
+    "phase": "Backend persistence",
+    "description": "Ajouter la base de persistance PostgreSQL, SQLAlchemy et Alembic."
+  },
+  {
+    "id": "TASK-003",
+    "title": "Domain base models",
+    "phase": "Backend domain",
+    "description": "Ajouter les modèles de base du domaine."
+  },
+  {
+    "id": "TASK-004",
+    "title": "Patient model",
+    "phase": "Patient domain",
+    "description": "Ajouter le modèle Patient."
+  },
+  {
+    "id": "TASK-005",
+    "title": "Patient schemas",
+    "phase": "Patient API",
+    "description": "Ajouter les schémas Pydantic Patient."
+  },
+  {
+    "id": "TASK-006",
+    "title": "Patient CRUD helpers",
+    "phase": "Patient persistence",
+    "description": "Ajouter les helpers CRUD Patient."
+  },
+  {
+    "id": "TASK-007",
+    "title": "Patient API endpoints",
+    "phase": "Patient API",
+    "description": "Ajouter les endpoints create, read et list Patient."
+  },
+  {
+    "id": "TASK-008",
+    "title": "Project progress page",
+    "phase": "Project visibility",
+    "description": "Publier une page statique d'avancement projet."
+  },
+  {
+    "id": "TASK-009",
+    "title": "Patient update/delete endpoints",
+    "phase": "Patient API",
+    "description": "Ajouter les endpoints PATCH et DELETE Patient."
+  },
+  {
+    "id": "TASK-010",
+    "title": "Patient list filtering and pagination",
+    "phase": "Patient API",
+    "description": "Ajouter les filtres et la pagination sur la liste Patient."
+  },
+  {
+    "id": "TASK-011",
+    "title": "Authentication foundation with Authlib",
+    "phase": "Security",
+    "description": "Préparer la fondation d'authentification avec Authlib."
+  },
+  {
+    "id": "TASK-012",
+    "title": "Frontend application shell",
+    "phase": "Frontend",
+    "description": "Initialiser la structure React TypeScript côté frontend."
+  }
+]
