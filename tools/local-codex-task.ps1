@@ -129,8 +129,8 @@ function Invoke-LoggedNative {
     $display = "$FilePath $($Arguments -join ' ')"
     Write-Host $display -ForegroundColor DarkGray
 
-    $encoding = [System.Text.UTF8Encoding]::new($false)
-    $logWriter = [System.IO.StreamWriter]::new($LogPath, $true, $encoding)
+    Add-Content -Path $LogPath -Encoding UTF8 -Value ""
+    Add-Content -Path $LogPath -Encoding UTF8 -Value ">>> $display"
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo.FileName = $FilePath
@@ -144,56 +144,28 @@ function Invoke-LoggedNative {
         [void]$process.StartInfo.ArgumentList.Add($argument)
     }
 
-    $outputHandler = [System.Diagnostics.DataReceivedEventHandler]{
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            Write-Host $eventArgs.Data
-            $logWriter.WriteLine($eventArgs.Data)
-            $logWriter.Flush()
-        }
+    [void]$process.Start()
+
+    if ($null -ne $InputText) {
+        $process.StandardInput.Write($InputText)
+        $process.StandardInput.Close()
     }
 
-    $errorHandler = [System.Diagnostics.DataReceivedEventHandler]{
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            Write-Host $eventArgs.Data -ForegroundColor Yellow
-            $logWriter.WriteLine($eventArgs.Data)
-            $logWriter.Flush()
-        }
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+
+    $process.WaitForExit()
+    $exitCode = $process.ExitCode
+    $process.Dispose()
+
+    if ($stdout) {
+        Write-Host $stdout.TrimEnd()
+        Add-Content -Path $LogPath -Encoding UTF8 -Value $stdout.TrimEnd()
     }
 
-    $exitCode = $null
-
-    try {
-        $logWriter.WriteLine("")
-        $logWriter.WriteLine(">>> $display")
-        $logWriter.Flush()
-
-        $process.add_OutputDataReceived($outputHandler)
-        $process.add_ErrorDataReceived($errorHandler)
-
-        [void]$process.Start()
-        $process.BeginOutputReadLine()
-        $process.BeginErrorReadLine()
-
-        if ($null -ne $InputText) {
-            $process.StandardInput.Write($InputText)
-            $process.StandardInput.Close()
-        }
-
-        $process.WaitForExit()
-        $process.WaitForExit()
-        $exitCode = $process.ExitCode
-    }
-    finally {
-        $process.remove_OutputDataReceived($outputHandler)
-        $process.remove_ErrorDataReceived($errorHandler)
-        $logWriter.Dispose()
-        $process.Dispose()
-    }
-
-    if ($null -eq $exitCode) {
-        throw "$display failed before an exit code was available. See $LogPath."
+    if ($stderr) {
+        Write-Host $stderr.TrimEnd() -ForegroundColor Yellow
+        Add-Content -Path $LogPath -Encoding UTF8 -Value $stderr.TrimEnd()
     }
 
     if ($exitCode -ne 0) {
@@ -241,7 +213,7 @@ function Write-RunMetadata {
 }
 
 function Assert-CleanTree {
-    $status = Invoke-GitOutput status --porcelain
+    $status = @(Invoke-GitOutput status --porcelain)
     if ($status.Count -gt 0) {
         throw "Working tree is not clean. Commit or stash local changes before running local Codex automation."
     }
@@ -250,7 +222,7 @@ function Assert-CleanTree {
 function Get-ChangedFilesForPr {
     param([string]$BaseBranchName)
 
-    $files = Invoke-GitOutput diff --name-only "$BaseBranchName...HEAD"
+    $files = @(Invoke-GitOutput diff --name-only "$BaseBranchName...HEAD")
     if ($files.Count -eq 0) {
         return "- No changed files detected."
     }
@@ -340,7 +312,8 @@ try {
     Assert-CleanTree
 
     $runStamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $runDir = Join-Path ".local-codex/runs" "$runStamp-$(ConvertTo-Slug $TaskId)"
+    $runsRoot = Join-Path $repoRoot ".local-codex/runs"
+    $runDir = Join-Path $runsRoot "$runStamp-$(ConvertTo-Slug $TaskId)"
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 
     $commandLog = Join-Path $runDir "commands.log"
@@ -368,7 +341,7 @@ try {
 
     Invoke-LoggedNative -FilePath git -Arguments @("fetch", "origin", $BaseBranch) -LogPath $commandLog
 
-    $localBase = Invoke-GitOutput branch --list $BaseBranch
+    $localBase = @(Invoke-GitOutput branch --list $BaseBranch)
     if ($localBase.Count -gt 0) {
         Invoke-LoggedNative -FilePath git -Arguments @("switch", $BaseBranch) -LogPath $commandLog
     }
@@ -378,7 +351,7 @@ try {
 
     Invoke-LoggedNative -FilePath git -Arguments @("pull", "--ff-only", "origin", $BaseBranch) -LogPath $commandLog
 
-    $existingBranch = Invoke-GitOutput branch --list $BranchName
+    $existingBranch = @(Invoke-GitOutput branch --list $BranchName)
     if ($existingBranch.Count -gt 0) {
         Invoke-LoggedNative -FilePath git -Arguments @("switch", $BranchName) -LogPath $commandLog
     }
@@ -419,7 +392,7 @@ $taskText
         }
     }
 
-    $pendingChanges = Invoke-GitOutput status --porcelain
+    $pendingChanges = @(Invoke-GitOutput status --porcelain)
     if ($pendingChanges.Count -eq 0) {
         throw "Codex completed without producing tracked changes to commit."
     }

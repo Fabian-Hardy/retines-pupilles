@@ -125,25 +125,29 @@ try {
             }
 
             $taskScript = Join-Path $repoRoot "tools/local-codex-task.ps1"
-            $arguments = @($TaskFile, "-BaseBranch", $BaseBranch, "-Repo", $Repo)
+            $taskArguments = @{
+                TaskFile = $TaskFile
+                BaseBranch = $BaseBranch
+                Repo = $Repo
+            }
 
             if ($TaskId) {
-                $arguments += @("-TaskId", $TaskId)
+                $taskArguments["TaskId"] = $TaskId
             }
             if ($BranchName) {
-                $arguments += @("-BranchName", $BranchName)
+                $taskArguments["BranchName"] = $BranchName
             }
             if ($RunBackendValidation) {
-                $arguments += "-RunBackendValidation"
+                $taskArguments["RunBackendValidation"] = $true
             }
             if ($SkipPush) {
-                $arguments += "-SkipPush"
+                $taskArguments["SkipPush"] = $true
             }
             if ($SkipPullRequest) {
-                $arguments += "-SkipPullRequest"
+                $taskArguments["SkipPullRequest"] = $true
             }
 
-            & $taskScript @arguments
+            & $taskScript @taskArguments
             if ($LASTEXITCODE -ne 0) {
                 exit $LASTEXITCODE
             }
