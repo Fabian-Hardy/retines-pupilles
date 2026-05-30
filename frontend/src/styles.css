@@ -77,7 +77,9 @@ a {
 
 .brand h1,
 .workspace-header h2,
-.placeholder-panel h3 {
+.placeholder-panel h3,
+.login-form h2,
+.public-panel h1 {
   margin: 0;
   letter-spacing: 0;
 }
@@ -112,6 +114,62 @@ a {
   color: currentcolor;
   font-size: 0.75rem;
   opacity: 0.74;
+}
+
+.session-panel {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: auto;
+  border-top: 1px solid rgb(255 255 255 / 18%);
+  padding-top: 1rem;
+}
+
+.session-panel p {
+  margin: 0;
+}
+
+.session-label {
+  color: #c8d7d5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.session-user {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.session-email {
+  overflow-wrap: anywhere;
+  color: #dbe8e6;
+  font-size: 0.875rem;
+}
+
+.text-button,
+.primary-button {
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.text-button {
+  justify-self: start;
+  margin-top: 0.35rem;
+  padding: 0;
+  color: #f4c95d;
+  background: transparent;
+}
+
+.text-button:focus-visible,
+.primary-button:focus-visible,
+.login-form input:focus-visible {
+  outline: 3px solid #f4c95d;
+  outline-offset: 2px;
 }
 
 .workspace {
@@ -166,6 +224,91 @@ a {
 
 .placeholder-panel p:last-child {
   max-width: 34rem;
+  margin: 1rem 0 0;
+  color: #4c5d62;
+}
+
+.public-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1.25rem;
+  background: #f5f7f8;
+}
+
+.login-panel,
+.public-panel {
+  width: min(100%, 30rem);
+  border: 1px solid #dce4e5;
+  border-radius: 8px;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgb(24 35 39 / 8%);
+}
+
+.login-panel {
+  display: grid;
+  gap: 2rem;
+}
+
+.login-panel .brand-kicker {
+  color: #6f7e82;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-form h2,
+.public-panel h1 {
+  margin-top: 0.25rem;
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: #34464b;
+  font-size: 0.925rem;
+  font-weight: 800;
+}
+
+.login-form input {
+  min-height: 2.75rem;
+  width: 100%;
+  border: 1px solid #cddddd;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  color: #182327;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 500;
+}
+
+.form-error {
+  margin: 0;
+  border: 1px solid #e2b2aa;
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #7d2a1f;
+  background: #fff4f1;
+  font-weight: 700;
+}
+
+.primary-button {
+  padding: 0.65rem 1rem;
+  color: #183237;
+  background: #f4c95d;
+}
+
+.primary-button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.public-panel p:last-child {
   margin: 1rem 0 0;
   color: #4c5d62;
 }
