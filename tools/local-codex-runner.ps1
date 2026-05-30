@@ -73,7 +73,7 @@ function Show-Status {
     Write-Host "Branch: $($branch -join ' ')"
     Write-Host ""
     Write-Host "Git status:"
-    if ($status.Count -eq 0) {
+    if ($null -eq $status -or @($status).Count -eq 0) {
         Write-Host "  clean"
     }
     else {
@@ -92,7 +92,7 @@ function Show-Status {
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 8
 
-        if ($runs.Count -eq 0) {
+        if ($null -eq $runs -or @($runs).Count -eq 0) {
             Write-Host "  none"
         }
 
