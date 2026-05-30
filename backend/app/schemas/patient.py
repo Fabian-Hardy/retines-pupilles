@@ -125,4 +125,13 @@ class PatientRead(BaseModel):
     country_code: str
 
 
-__all__ = ["PatientCreate", "PatientRead", "PatientUpdate"]
+class PatientListResponse(BaseModel):
+    """Paginated patient list response."""
+
+    items: list[PatientRead]
+    total: int
+    offset: int
+    limit: int
+
+
+__all__ = ["PatientCreate", "PatientListResponse", "PatientRead", "PatientUpdate"]
