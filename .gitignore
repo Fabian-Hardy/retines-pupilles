@@ -100,4 +100,5 @@ site/
 # --- Logs ---
 *.log
 logs/
+.local-codex/
 _site/
