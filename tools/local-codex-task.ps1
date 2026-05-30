@@ -123,7 +123,9 @@ function Invoke-LoggedNative {
         [string]$FilePath,
         [string[]]$Arguments,
         [string]$LogPath,
-        [string]$InputText
+        [string]$InputText,
+        [string]$InputFilePath,
+        [hashtable]$Environment
     )
 
     $display = "$FilePath $($Arguments -join ' ')"
@@ -132,23 +134,59 @@ function Invoke-LoggedNative {
     Add-Content -Path $LogPath -Encoding UTF8 -Value ""
     Add-Content -Path $LogPath -Encoding UTF8 -Value ">>> $display"
 
+    $hasInputText = -not [string]::IsNullOrEmpty($InputText)
+    $hasInputFilePath = -not [string]::IsNullOrEmpty($InputFilePath)
+
+    if ($hasInputText -and $hasInputFilePath) {
+        throw "Invoke-LoggedNative accepts either InputText or InputFilePath, not both."
+    }
+
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo.FileName = $FilePath
     $process.StartInfo.WorkingDirectory = (Get-Location).Path
     $process.StartInfo.UseShellExecute = $false
     $process.StartInfo.RedirectStandardOutput = $true
     $process.StartInfo.RedirectStandardError = $true
-    $process.StartInfo.RedirectStandardInput = ($null -ne $InputText)
+    $process.StartInfo.RedirectStandardInput = ($hasInputText -or $hasInputFilePath)
+
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    $startInfoType = $process.StartInfo.GetType()
+    if ($null -ne $startInfoType.GetProperty("StandardOutputEncoding")) {
+        $process.StartInfo.StandardOutputEncoding = $utf8NoBom
+    }
+    if ($null -ne $startInfoType.GetProperty("StandardErrorEncoding")) {
+        $process.StartInfo.StandardErrorEncoding = $utf8NoBom
+    }
+    if (($hasInputText -or $hasInputFilePath) -and ($null -ne $startInfoType.GetProperty("StandardInputEncoding"))) {
+        $process.StartInfo.StandardInputEncoding = $utf8NoBom
+    }
 
     foreach ($argument in $Arguments) {
         [void]$process.StartInfo.ArgumentList.Add($argument)
     }
 
+    if ($null -ne $Environment) {
+        foreach ($key in $Environment.Keys) {
+            $process.StartInfo.Environment[$key] = [string]$Environment[$key]
+        }
+    }
+
     [void]$process.Start()
 
-    if ($null -ne $InputText) {
+    if ($hasInputText) {
         $process.StandardInput.Write($InputText)
         $process.StandardInput.Close()
+    }
+    elseif ($hasInputFilePath) {
+        $inputStream = [System.IO.File]::OpenRead($InputFilePath)
+        try {
+            $inputStream.CopyTo($process.StandardInput.BaseStream)
+            $process.StandardInput.BaseStream.Flush()
+        }
+        finally {
+            $inputStream.Dispose()
+            $process.StandardInput.Close()
+        }
     }
 
     $stdout = $process.StandardOutput.ReadToEnd()
@@ -158,14 +196,24 @@ function Invoke-LoggedNative {
     $exitCode = $process.ExitCode
     $process.Dispose()
 
-    if ($stdout) {
-        Write-Host $stdout.TrimEnd()
-        Add-Content -Path $LogPath -Encoding UTF8 -Value $stdout.TrimEnd()
+    $stdoutLines = @()
+    if (-not [string]::IsNullOrEmpty($stdout)) {
+        $stdoutLines = $stdout -split "`r?`n" | Where-Object { $_ -ne "" }
     }
 
-    if ($stderr) {
-        Write-Host $stderr.TrimEnd() -ForegroundColor Yellow
-        Add-Content -Path $LogPath -Encoding UTF8 -Value $stderr.TrimEnd()
+    $stderrLines = @()
+    if (-not [string]::IsNullOrEmpty($stderr)) {
+        $stderrLines = $stderr -split "`r?`n" | Where-Object { $_ -ne "" }
+    }
+
+    foreach ($line in $stdoutLines) {
+        Write-Host $line
+        Add-Content -Path $LogPath -Encoding UTF8 -Value $line
+    }
+
+    foreach ($line in $stderrLines) {
+        Write-Host $line -ForegroundColor Yellow
+        Add-Content -Path $LogPath -Encoding UTF8 -Value $line
     }
 
     if ($exitCode -ne 0) {
@@ -173,6 +221,73 @@ function Invoke-LoggedNative {
     }
 
     return $exitCode
+}
+
+function Write-Utf8NoBomFile {
+    param(
+        [string]$Path,
+        [string]$Text
+    )
+
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($Path, $Text, $encoding)
+}
+
+function Invoke-CodexExecWithPromptFile {
+    param(
+        [string]$PromptPath,
+        [string]$RepoRoot,
+        [string]$LogPath
+    )
+
+    Add-Content -Path $LogPath -Encoding UTF8 -Value "Prompt file: $PromptPath"
+
+    $display = "codex exec --sandbox danger-full-access --cd $RepoRoot -"
+    Write-Host $display -ForegroundColor Cyan
+    Add-Content -Path $LogPath -Encoding UTF8 -Value ""
+    Add-Content -Path $LogPath -Encoding UTF8 -Value ">>> $display"
+
+    $runDir = Split-Path -Parent $LogPath
+    $stdoutPath = Join-Path $runDir "codex.stdout.log"
+    $stderrPath = Join-Path $runDir "codex.stderr.log"
+
+    Remove-Item -Path $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+
+    $quotedRepoRoot = '"' + ($RepoRoot -replace '"', '\"') + '"'
+    $argumentList = "exec --sandbox danger-full-access --cd $quotedRepoRoot -"
+
+    $process = Start-Process `
+        -FilePath "codex" `
+        -ArgumentList $argumentList `
+        -WorkingDirectory $RepoRoot `
+        -RedirectStandardInput $PromptPath `
+        -RedirectStandardOutput $stdoutPath `
+        -RedirectStandardError $stderrPath `
+        -NoNewWindow `
+        -Wait `
+        -PassThru
+
+    if (Test-Path $stdoutPath) {
+        $stdout = Get-Content -Path $stdoutPath -Raw -Encoding UTF8
+        if (-not [string]::IsNullOrEmpty($stdout)) {
+            Write-Host $stdout
+            Add-Content -Path $LogPath -Encoding UTF8 -Value $stdout
+        }
+    }
+
+    if (Test-Path $stderrPath) {
+        $stderr = Get-Content -Path $stderrPath -Raw -Encoding UTF8
+        if (-not [string]::IsNullOrEmpty($stderr)) {
+            Write-Host $stderr
+            Add-Content -Path $LogPath -Encoding UTF8 -Value $stderr
+        }
+    }
+
+    if ($process.ExitCode -ne 0) {
+        throw "$display failed with exit code $($process.ExitCode). See $LogPath."
+    }
+
+    return $process.ExitCode
 }
 
 function Invoke-GhCapture {
@@ -319,6 +434,7 @@ try {
     $commandLog = Join-Path $runDir "commands.log"
     $codexLog = Join-Path $runDir "codex.log"
     $backendLog = Join-Path $runDir "backend-validation.log"
+    $promptPath = Join-Path $runDir "codex-prompt.md"
     $prBodyPath = Join-Path $runDir "pull-request-body.md"
     $metadataPath = Join-Path $runDir "run.json"
 
@@ -330,6 +446,7 @@ try {
         base_branch = $BaseBranch
         branch = $BranchName
         run_dir = (Resolve-Path $runDir).Path
+        prompt_file = $promptPath
         started_at = (Get-Date).ToString("o")
         completed_at = $null
         status = "running"
@@ -372,7 +489,8 @@ Task file: $relativeTaskFile
 $taskText
 "@
 
-    Invoke-LoggedNative -FilePath codex -Arguments @("exec", "--sandbox", "danger-full-access", "--cd", $repoRoot, "-") -LogPath $codexLog -InputText $codexPrompt
+    Write-Utf8NoBomFile -Path $promptPath -Text $codexPrompt
+    Invoke-CodexExecWithPromptFile -PromptPath $promptPath -RepoRoot $repoRoot -LogPath $codexLog
 
     Invoke-LoggedNative -FilePath git -Arguments @("diff", "--check") -LogPath $commandLog
     $runMetadata.validation_commands += "git diff --check"
