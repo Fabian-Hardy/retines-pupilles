@@ -19,7 +19,6 @@ git.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateScript({ Test-Path -Path $_ -PathType Leaf })]
     [string]$TaskFile,
 
     [string]$TaskId,
@@ -45,8 +44,21 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 function Get-RepoRoot {
-    $scriptRoot = Split-Path -Parent $PSCommandPath
-    return (Resolve-Path (Join-Path $scriptRoot "..")).Path
+    $scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $PSCommandPath }
+    $candidateRoot = (Resolve-Path -LiteralPath (Join-Path $scriptRoot "..")).Path
+
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        $gitRoot = @(& git -C $candidateRoot rev-parse --show-toplevel 2>$null)
+        if ($LASTEXITCODE -eq 0 -and $gitRoot.Count -gt 0) {
+            return (Resolve-Path -LiteralPath $gitRoot[0]).Path
+        }
+    }
+
+    if (Test-Path -LiteralPath (Join-Path $candidateRoot ".git")) {
+        return $candidateRoot
+    }
+
+    throw "Unable to determine repository root from script path '$scriptRoot'."
 }
 
 function Assert-CommandAvailable {
@@ -55,6 +67,54 @@ function Assert-CommandAvailable {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "Required command '$Name' was not found in PATH."
     }
+}
+
+function Resolve-RepoFile {
+    param(
+        [string]$Path,
+        [string]$RepoRoot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        throw "Missing task file path."
+    }
+
+    $candidatePath = if ([System.IO.Path]::IsPathRooted($Path)) {
+        $Path
+    }
+    else {
+        Join-Path $RepoRoot $Path
+    }
+
+    $resolvedPath = (Resolve-Path -LiteralPath $candidatePath -ErrorAction Stop).Path
+    if (-not (Test-Path -LiteralPath $resolvedPath -PathType Leaf)) {
+        throw "Task file '$Path' does not resolve to a file."
+    }
+
+    return $resolvedPath
+}
+
+function Get-RepositoryRelativePath {
+    param(
+        [string]$RepoRoot,
+        [string]$Path
+    )
+
+    $separatorChars = @(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar
+    )
+    $rootPath = (Resolve-Path -LiteralPath $RepoRoot).Path.TrimEnd($separatorChars) + [System.IO.Path]::DirectorySeparatorChar
+    $fullPath = (Resolve-Path -LiteralPath $Path).Path
+
+    if (-not $fullPath.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $fullPath
+    }
+
+    $rootUri = [System.Uri]::new($rootPath)
+    $pathUri = [System.Uri]::new($fullPath)
+    $relativeUri = $rootUri.MakeRelativeUri($pathUri).ToString()
+    return [System.Uri]::UnescapeDataString($relativeUri).Replace("/", [System.IO.Path]::DirectorySeparatorChar)
 }
 
 function ConvertTo-Slug {
@@ -118,85 +178,147 @@ function Invoke-GitOutput {
     return @($output)
 }
 
+function ConvertTo-NativeArgument {
+    param([AllowNull()][string]$Value)
+
+    if ($null -eq $Value -or $Value.Length -eq 0) {
+        return '""'
+    }
+
+    if ($Value -notmatch '[\s"]') {
+        return $Value
+    }
+
+    $escaped = $Value -replace '(\\*)"', '$1$1\"'
+    $escaped = $escaped -replace '(\\+)$', '$1$1'
+    return '"' + $escaped + '"'
+}
+
+function Format-NativeCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments
+    )
+
+    $formattedArguments = @($Arguments | ForEach-Object { ConvertTo-NativeArgument $_ })
+    if ($formattedArguments.Count -eq 0) {
+        return $FilePath
+    }
+
+    return "$FilePath $($formattedArguments -join ' ')"
+}
+
+function Add-LogLine {
+    param(
+        [string]$Path,
+        [string]$Value
+    )
+
+    $logDirectory = Split-Path -Parent $Path
+    if ($logDirectory -and -not (Test-Path -LiteralPath $logDirectory)) {
+        New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
+    }
+
+    Add-Content -LiteralPath $Path -Encoding UTF8 -Value $Value
+}
+
+function Copy-LogFile {
+    param(
+        [string]$SourcePath,
+        [string]$DestinationPath,
+        [string]$Header
+    )
+
+    Add-LogLine -Path $DestinationPath -Value $Header
+    if (Test-Path -LiteralPath $SourcePath) {
+        Get-Content -LiteralPath $SourcePath -Encoding UTF8 -ErrorAction SilentlyContinue |
+            Add-Content -LiteralPath $DestinationPath -Encoding UTF8
+    }
+}
+
+function Show-LogTail {
+    param(
+        [string]$Path,
+        [int]$LineCount = 80
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+
+    Write-Host ""
+    Write-Host "Last $LineCount log lines from ${Path}:" -ForegroundColor Yellow
+    foreach ($line in @(Get-Content -LiteralPath $Path -Tail $LineCount -ErrorAction SilentlyContinue)) {
+        Write-Host $line
+    }
+}
+
 function Invoke-LoggedNative {
     param(
         [string]$FilePath,
-        [string[]]$Arguments,
+        [string[]]$Arguments = @(),
         [string]$LogPath,
-        [string]$InputText
+        [string]$InputText,
+        [int]$FailureTailLines = 80
     )
 
-    $display = "$FilePath $($Arguments -join ' ')"
-    Write-Host $display -ForegroundColor DarkGray
-
-    $encoding = [System.Text.UTF8Encoding]::new($false)
-    $logWriter = [System.IO.StreamWriter]::new($LogPath, $true, $encoding)
-
-    $process = [System.Diagnostics.Process]::new()
-    $process.StartInfo.FileName = $FilePath
-    $process.StartInfo.WorkingDirectory = (Get-Location).Path
-    $process.StartInfo.UseShellExecute = $false
-    $process.StartInfo.RedirectStandardOutput = $true
-    $process.StartInfo.RedirectStandardError = $true
-    $process.StartInfo.RedirectStandardInput = ($null -ne $InputText)
-
-    foreach ($argument in $Arguments) {
-        [void]$process.StartInfo.ArgumentList.Add($argument)
+    # File-backed redirection avoids runspace-unsafe stream callbacks.
+    $argumentList = @($Arguments)
+    $display = Format-NativeCommand -FilePath $FilePath -Arguments $argumentList
+    $logDirectory = Split-Path -Parent $LogPath
+    if ($logDirectory -and -not (Test-Path -LiteralPath $logDirectory)) {
+        New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
     }
 
-    $outputHandler = [System.Diagnostics.DataReceivedEventHandler]{
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            Write-Host $eventArgs.Data
-            $logWriter.WriteLine($eventArgs.Data)
-            $logWriter.Flush()
+    Write-Host "Running: $display" -ForegroundColor DarkGray
+    Write-Host "  log: $LogPath" -ForegroundColor DarkGray
+    Add-LogLine -Path $LogPath -Value ""
+    Add-LogLine -Path $LogPath -Value ">>> $display"
+    Add-LogLine -Path $LogPath -Value "started_at=$((Get-Date).ToString('o'))"
+
+    $streamPrefix = Join-Path $logDirectory ([System.Guid]::NewGuid().ToString("N"))
+    $stdoutPath = "$streamPrefix.stdout.log"
+    $stderrPath = "$streamPrefix.stderr.log"
+    $inputPath = "$streamPrefix.stdin.txt"
+    $hasInput = $PSBoundParameters.ContainsKey("InputText")
+
+    if ($hasInput) {
+        Set-Content -LiteralPath $inputPath -Encoding UTF8 -NoNewline -Value $InputText
+    }
+
+    $startParameters = @{
+        FilePath = $FilePath
+        WorkingDirectory = (Get-Location).Path
+        RedirectStandardOutput = $stdoutPath
+        RedirectStandardError = $stderrPath
+        NoNewWindow = $true
+        Wait = $true
+        PassThru = $true
+    }
+
+    if ($argumentList.Count -gt 0) {
+        $startParameters.ArgumentList = ($argumentList | ForEach-Object { ConvertTo-NativeArgument $_ }) -join " "
+    }
+    if ($hasInput) {
+        $startParameters.RedirectStandardInput = $inputPath
+    }
+
+    $process = Start-Process @startParameters
+    $exitCode = $process.ExitCode
+
+    Copy-LogFile -SourcePath $stdoutPath -DestinationPath $LogPath -Header "<<< stdout"
+    Copy-LogFile -SourcePath $stderrPath -DestinationPath $LogPath -Header "<<< stderr"
+    Add-LogLine -Path $LogPath -Value "exit_code=$exitCode"
+    Add-LogLine -Path $LogPath -Value "completed_at=$((Get-Date).ToString('o'))"
+
+    foreach ($tempPath in @($stdoutPath, $stderrPath, $inputPath)) {
+        if (Test-Path -LiteralPath $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force
         }
-    }
-
-    $errorHandler = [System.Diagnostics.DataReceivedEventHandler]{
-        param($sender, $eventArgs)
-        if ($null -ne $eventArgs.Data) {
-            Write-Host $eventArgs.Data -ForegroundColor Yellow
-            $logWriter.WriteLine($eventArgs.Data)
-            $logWriter.Flush()
-        }
-    }
-
-    $exitCode = $null
-
-    try {
-        $logWriter.WriteLine("")
-        $logWriter.WriteLine(">>> $display")
-        $logWriter.Flush()
-
-        $process.add_OutputDataReceived($outputHandler)
-        $process.add_ErrorDataReceived($errorHandler)
-
-        [void]$process.Start()
-        $process.BeginOutputReadLine()
-        $process.BeginErrorReadLine()
-
-        if ($null -ne $InputText) {
-            $process.StandardInput.Write($InputText)
-            $process.StandardInput.Close()
-        }
-
-        $process.WaitForExit()
-        $process.WaitForExit()
-        $exitCode = $process.ExitCode
-    }
-    finally {
-        $process.remove_OutputDataReceived($outputHandler)
-        $process.remove_ErrorDataReceived($errorHandler)
-        $logWriter.Dispose()
-        $process.Dispose()
-    }
-
-    if ($null -eq $exitCode) {
-        throw "$display failed before an exit code was available. See $LogPath."
     }
 
     if ($exitCode -ne 0) {
+        Show-LogTail -Path $LogPath -LineCount $FailureTailLines
         throw "$display failed with exit code $exitCode. See $LogPath."
     }
 
@@ -210,15 +332,18 @@ function Invoke-GhCapture {
         [switch]$AllowFailure
     )
 
-    $display = "gh $($Arguments -join ' ')"
-    Write-Host $display -ForegroundColor DarkGray
-    Add-Content -Path $LogPath -Encoding UTF8 -Value ""
-    Add-Content -Path $LogPath -Encoding UTF8 -Value ">>> $display"
+    $display = Format-NativeCommand -FilePath "gh" -Arguments @($Arguments)
+    Write-Host "Running: $display" -ForegroundColor DarkGray
+    Write-Host "  log: $LogPath" -ForegroundColor DarkGray
+    Add-LogLine -Path $LogPath -Value ""
+    Add-LogLine -Path $LogPath -Value ">>> $display"
 
-    $output = & gh @Arguments 2>&1
+    $output = @(& gh @Arguments 2>&1)
     $exitCode = $LASTEXITCODE
-    if ($output) {
-        Add-Content -Path $LogPath -Encoding UTF8 -Value ($output -join "`n")
+    if ($output.Count -gt 0) {
+        foreach ($line in $output) {
+            Add-LogLine -Path $LogPath -Value $line.ToString()
+        }
     }
 
     if ($exitCode -ne 0 -and -not $AllowFailure) {
@@ -237,11 +362,16 @@ function Write-RunMetadata {
         [string]$Path
     )
 
-    $Metadata | ConvertTo-Json -Depth 6 | Set-Content -Path $Path -Encoding UTF8
+    $metadataDirectory = Split-Path -Parent $Path
+    if ($metadataDirectory -and -not (Test-Path -LiteralPath $metadataDirectory)) {
+        New-Item -ItemType Directory -Force -Path $metadataDirectory | Out-Null
+    }
+
+    $Metadata | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
 function Assert-CleanTree {
-    $status = Invoke-GitOutput status --porcelain
+    $status = @(Invoke-GitOutput status --porcelain)
     if ($status.Count -gt 0) {
         throw "Working tree is not clean. Commit or stash local changes before running local Codex automation."
     }
@@ -250,7 +380,7 @@ function Assert-CleanTree {
 function Get-ChangedFilesForPr {
     param([string]$BaseBranchName)
 
-    $files = Invoke-GitOutput diff --name-only "$BaseBranchName...HEAD"
+    $files = @(Invoke-GitOutput diff --name-only "$BaseBranchName...HEAD")
     if ($files.Count -eq 0) {
         return "- No changed files detected."
     }
@@ -266,8 +396,9 @@ function New-PrBody {
         [string]$BodyPath
     )
 
-    $validations = if ($ValidationCommands.Count -gt 0) {
-        ($ValidationCommands | ForEach-Object { "- ``$_``" }) -join "`n"
+    $validationList = @($ValidationCommands)
+    $validations = if ($validationList.Count -gt 0) {
+        ($validationList | ForEach-Object { "- ``$_``" }) -join "`n"
     }
     else {
         "- No validation commands recorded."
@@ -294,7 +425,7 @@ $validations
 - Address review comments from ChatGPT and human reviewers.
 "@
 
-    $body | Set-Content -Path $BodyPath -Encoding UTF8
+    $body | Set-Content -LiteralPath $BodyPath -Encoding UTF8
 }
 
 $originalLocation = Get-Location
@@ -303,17 +434,12 @@ $runMetadata = $null
 $metadataPath = $null
 
 try {
-    Set-Location $repoRoot
+    Set-Location -LiteralPath $repoRoot
 
     Assert-CommandAvailable git
-    Assert-CommandAvailable codex
-    Assert-CommandAvailable gh
-    if ($RunBackendValidation) {
-        Assert-CommandAvailable docker
-    }
 
-    $resolvedTaskFile = (Resolve-Path $TaskFile).Path
-    $taskText = Get-Content -Path $resolvedTaskFile -Raw -Encoding UTF8
+    $resolvedTaskFile = Resolve-RepoFile -Path $TaskFile -RepoRoot $repoRoot
+    $taskText = Get-Content -LiteralPath $resolvedTaskFile -Raw -Encoding UTF8
 
     if (-not $TaskId) {
         $TaskId = Get-TaskIdFromText -Text $taskText
@@ -338,10 +464,19 @@ try {
     }
 
     Assert-CleanTree
+    Assert-CommandAvailable codex
+    if (-not $SkipPush -and -not $SkipPullRequest) {
+        Assert-CommandAvailable gh
+    }
+    if ($RunBackendValidation) {
+        Assert-CommandAvailable docker
+    }
 
     $runStamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $runDir = Join-Path ".local-codex/runs" "$runStamp-$(ConvertTo-Slug $TaskId)"
+    $runRoot = Join-Path $repoRoot ".local-codex\runs"
+    $runDir = Join-Path $runRoot "$runStamp-$(ConvertTo-Slug $TaskId)"
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+    $runDir = (Resolve-Path -LiteralPath $runDir).Path
 
     $commandLog = Join-Path $runDir "commands.log"
     $codexLog = Join-Path $runDir "codex.log"
@@ -356,7 +491,7 @@ try {
         repo = $Repo
         base_branch = $BaseBranch
         branch = $BranchName
-        run_dir = (Resolve-Path $runDir).Path
+        run_dir = $runDir
         started_at = (Get-Date).ToString("o")
         completed_at = $null
         status = "running"
@@ -368,7 +503,7 @@ try {
 
     Invoke-LoggedNative -FilePath git -Arguments @("fetch", "origin", $BaseBranch) -LogPath $commandLog
 
-    $localBase = Invoke-GitOutput branch --list $BaseBranch
+    $localBase = @(Invoke-GitOutput branch --list $BaseBranch)
     if ($localBase.Count -gt 0) {
         Invoke-LoggedNative -FilePath git -Arguments @("switch", $BaseBranch) -LogPath $commandLog
     }
@@ -378,7 +513,7 @@ try {
 
     Invoke-LoggedNative -FilePath git -Arguments @("pull", "--ff-only", "origin", $BaseBranch) -LogPath $commandLog
 
-    $existingBranch = Invoke-GitOutput branch --list $BranchName
+    $existingBranch = @(Invoke-GitOutput branch --list $BranchName)
     if ($existingBranch.Count -gt 0) {
         Invoke-LoggedNative -FilePath git -Arguments @("switch", $BranchName) -LogPath $commandLog
     }
@@ -386,7 +521,7 @@ try {
         Invoke-LoggedNative -FilePath git -Arguments @("switch", "-c", $BranchName, $BaseBranch) -LogPath $commandLog
     }
 
-    $relativeTaskFile = [System.IO.Path]::GetRelativePath($repoRoot, $resolvedTaskFile)
+    $relativeTaskFile = Get-RepositoryRelativePath -RepoRoot $repoRoot -Path $resolvedTaskFile
     $codexPrompt = @"
 You are running local automation for Fabian-Hardy/retines-pupilles.
 
@@ -419,7 +554,7 @@ $taskText
         }
     }
 
-    $pendingChanges = Invoke-GitOutput status --porcelain
+    $pendingChanges = @(Invoke-GitOutput status --porcelain)
     if ($pendingChanges.Count -eq 0) {
         throw "Codex completed without producing tracked changes to commit."
     }
@@ -435,9 +570,24 @@ $taskText
         $changedFiles = Get-ChangedFilesForPr -BaseBranchName $BaseBranch
         New-PrBody -Task $TaskId -ChangedFiles $changedFiles -ValidationCommands $runMetadata.validation_commands -BodyPath $prBodyPath
 
-        $existingPr = Invoke-GhCapture -Arguments @("pr", "view", "--repo", $Repo, "--head", $BranchName, "--json", "number,url") -LogPath $commandLog -AllowFailure
-        if ($existingPr.ExitCode -eq 0 -and $existingPr.Output) {
-            $prData = $existingPr.Output | ConvertFrom-Json
+        $existingPr = Invoke-GhCapture -Arguments @(
+            "pr", "list",
+            "--repo", $Repo,
+            "--head", $BranchName,
+            "--base", $BaseBranch,
+            "--state", "open",
+            "--json", "number,url,title",
+            "--limit", "1"
+        ) -LogPath $commandLog -AllowFailure
+        $existingPrList = if ($existingPr.ExitCode -eq 0 -and $existingPr.Output.Trim()) {
+            @($existingPr.Output | ConvertFrom-Json)
+        }
+        else {
+            @()
+        }
+
+        if ($existingPrList.Count -gt 0) {
+            $prData = $existingPrList[0]
             $runMetadata.pr_url = $prData.url
             Write-Host "Existing PR found: $($prData.url)" -ForegroundColor Green
         }
@@ -461,7 +611,7 @@ $taskText
     Write-RunMetadata -Metadata $runMetadata -Path $metadataPath
 
     Write-Host "Local Codex run completed for $TaskId." -ForegroundColor Green
-    Write-Host "Logs: $((Resolve-Path $runDir).Path)"
+    Write-Host "Logs: $runDir"
 }
 catch {
     if ($null -ne $runMetadata -and $metadataPath) {
