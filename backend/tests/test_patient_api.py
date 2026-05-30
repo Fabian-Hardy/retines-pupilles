@@ -9,6 +9,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.api.v1.endpoints import patients as patient_endpoints
+from app.crud.patient import PatientListFilters
 from app.db.session import get_db
 from app.main import app
 from app.models.patient import Patient
@@ -296,37 +297,160 @@ async def test_delete_patient_endpoint_returns_404_when_missing(
 
 
 @pytest.mark.asyncio
-async def test_list_patients_endpoint_returns_patients(
+async def test_list_patients_endpoint_returns_paginated_response_shape(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     first_patient = build_patient(first_name="Jeanne", last_name="Dupont")
     second_patient = build_patient(first_name="Louis", last_name="Martin")
 
+    async def count_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+    ) -> int:
+        assert filters == PatientListFilters()
+        return 2
+
     async def list_patients_stub(
         session: object,
         *,
+        filters: PatientListFilters | None = None,
         offset: int = 0,
         limit: int = 100,
     ) -> list[Patient]:
-        assert offset == 5
-        assert limit == 10
+        assert filters == PatientListFilters()
+        assert offset == 0
+        assert limit == 100
         return [first_patient, second_patient]
 
+    monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
+    monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
+
+    response = await client.get("/api/v1/patients")
+
+    assert response.status_code == 200
+
+    body: dict[str, Any] = response.json()
+    assert set(body) == {"items", "total", "offset", "limit"}
+    assert body["total"] == 2
+    assert body["offset"] == 0
+    assert body["limit"] == 100
+    assert len(body["items"]) == 2
+    assert body["items"][0]["first_name"] == "Jeanne"
+    assert body["items"][1]["first_name"] == "Louis"
+
+
+@pytest.mark.asyncio
+async def test_list_patients_endpoint_forwards_pagination(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def count_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+    ) -> int:
+        assert filters == PatientListFilters()
+        return 0
+
+    async def list_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Patient]:
+        assert filters == PatientListFilters()
+        assert offset == 5
+        assert limit == 10
+        return []
+
+    monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
     monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
 
     response = await client.get("/api/v1/patients?offset=5&limit=10")
 
     assert response.status_code == 200
-
-    body: list[dict[str, Any]] = response.json()
-    assert len(body) == 2
-    assert body[0]["first_name"] == "Jeanne"
-    assert body[1]["first_name"] == "Louis"
+    assert response.json()["offset"] == 5
+    assert response.json()["limit"] == 10
 
 
+@pytest.mark.parametrize(
+    ("query_string", "expected_filters"),
+    [
+        ("last_name=Dupont", PatientListFilters(last_name="Dupont")),
+        ("city=Verviers", PatientListFilters(city="Verviers")),
+        ("preferred_language=nl", PatientListFilters(preferred_language="nl")),
+        ("q=jeanne", PatientListFilters(q="jeanne")),
+    ],
+    ids=["last_name", "city", "preferred_language", "q"],
+)
 @pytest.mark.asyncio
-async def test_list_patients_endpoint_rejects_invalid_limit(client: AsyncClient) -> None:
-    response = await client.get("/api/v1/patients?limit=0")
+async def test_list_patients_endpoint_forwards_filters(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    query_string: str,
+    expected_filters: PatientListFilters,
+) -> None:
+    async def count_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+    ) -> int:
+        assert filters == expected_filters
+        return 0
+
+    async def list_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Patient]:
+        assert filters == expected_filters
+        assert offset == 0
+        assert limit == 100
+        return []
+
+    monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
+    monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
+
+    response = await client.get(f"/api/v1/patients?{query_string}")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "query_string",
+    ["offset=-1", "limit=0", "limit=101"],
+    ids=["negative_offset", "zero_limit", "limit_above_maximum"],
+)
+@pytest.mark.asyncio
+async def test_list_patients_endpoint_rejects_invalid_pagination(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    query_string: str,
+) -> None:
+    async def count_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+    ) -> int:
+        pytest.fail("count_patients should not be called for invalid pagination")
+
+    async def list_patients_stub(
+        session: object,
+        *,
+        filters: PatientListFilters | None = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> list[Patient]:
+        pytest.fail("list_patients should not be called for invalid pagination")
+
+    monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
+    monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
+
+    response = await client.get(f"/api/v1/patients?{query_string}")
 
     assert response.status_code == 422

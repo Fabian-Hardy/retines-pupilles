@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.patient import (
+    PatientListFilters,
+    count_patients,
     create_patient,
     delete_patient,
     get_patient,
@@ -14,7 +16,13 @@ from app.crud.patient import (
     update_patient,
 )
 from app.db.session import get_db
-from app.schemas.patient import PatientCreate, PatientRead, PatientUpdate
+from app.schemas.patient import (
+    LanguageCode,
+    PatientCreate,
+    PatientListResponse,
+    PatientRead,
+    PatientUpdate,
+)
 
 router = APIRouter(prefix="/patients", tags=["patients"])
 
@@ -95,14 +103,38 @@ async def delete_patient_endpoint(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("", response_model=list[PatientRead])
+@router.get("", response_model=PatientListResponse)
 async def list_patients_endpoint(
     session: DbSession,
+    q: Annotated[str | None, Query(max_length=254)] = None,
+    first_name: Annotated[str | None, Query(max_length=100)] = None,
+    last_name: Annotated[str | None, Query(max_length=100)] = None,
+    email: Annotated[str | None, Query(max_length=254)] = None,
+    city: Annotated[str | None, Query(max_length=100)] = None,
+    postal_code: Annotated[str | None, Query(max_length=16)] = None,
+    country_code: Annotated[str | None, Query(min_length=2, max_length=2)] = None,
+    preferred_language: Annotated[LanguageCode | None, Query()] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 100,
-) -> list[PatientRead]:
-    """Return a paginated list of patients."""
+) -> PatientListResponse:
+    """Return a filtered, paginated list of patients."""
 
-    patients = await list_patients(session, offset=offset, limit=limit)
+    filters = PatientListFilters(
+        q=q,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        city=city,
+        postal_code=postal_code,
+        country_code=country_code,
+        preferred_language=preferred_language,
+    )
+    total = await count_patients(session, filters=filters)
+    patients = await list_patients(session, filters=filters, offset=offset, limit=limit)
 
-    return [PatientRead.model_validate(patient) for patient in patients]
+    return PatientListResponse(
+        items=[PatientRead.model_validate(patient) for patient in patients],
+        total=total,
+        offset=offset,
+        limit=limit,
+    )
