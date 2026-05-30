@@ -1,6 +1,62 @@
 {
   "version": 1,
   "defaultBaseBranch": "develop",
-  "_comment": "Initial empty queue. Add task entries only after their task files exist.",
-  "tasks": []
+  "tasks": [
+    {
+      "id": "TASK-013",
+      "taskFile": "_tasks/task-013-frontend-auth-session-routing.md",
+      "branchName": "feature/task-013-frontend-auth-session-routing",
+      "title": "Frontend auth session routing",
+      "validations": [
+        {
+          "name": "Frontend typecheck",
+          "command": "Set-Location frontend; npm run typecheck"
+        }
+      ]
+    },
+    {
+      "id": "TASK-014",
+      "taskFile": "_tasks/task-014-frontend-patient-create-edit.md",
+      "branchName": "feature/task-014-frontend-patient-create-edit",
+      "title": "Frontend patient create/edit",
+      "validations": [
+        {
+          "name": "Frontend typecheck",
+          "command": "Set-Location frontend; npm run typecheck"
+        }
+      ]
+    },
+    {
+      "id": "TASK-015",
+      "taskFile": "_tasks/task-015-frontend-patient-detail-page.md",
+      "branchName": "feature/task-015-frontend-patient-detail-page",
+      "title": "Frontend patient detail page",
+      "validations": [
+        {
+          "name": "Frontend typecheck",
+          "command": "Set-Location frontend; npm run typecheck"
+        }
+      ]
+    },
+    {
+      "id": "TASK-016",
+      "taskFile": "_tasks/task-016-backend-patient-search-hardening.md",
+      "branchName": "feature/task-016-backend-patient-search-hardening",
+      "title": "Backend patient search hardening",
+      "validations": [
+        {
+          "name": "Backend ruff",
+          "command": "Set-Location backend; ruff check app/"
+        },
+        {
+          "name": "Backend mypy",
+          "command": "Set-Location backend; mypy app/"
+        },
+        {
+          "name": "Backend pytest",
+          "command": "Set-Location backend; pytest tests/ -v"
+        }
+      ]
+    }
+  ]
 }
