@@ -32,6 +32,8 @@ param(
 
     [switch]$RunBackendValidation,
 
+    [switch]$SkipCommit,
+
     [switch]$SkipPush,
 
     [switch]$SkipPullRequest
@@ -139,6 +141,9 @@ try {
             }
             if ($RunBackendValidation) {
                 $taskArguments["RunBackendValidation"] = $true
+            }
+            if ($SkipCommit) {
+                $taskArguments["SkipCommit"] = $true
             }
             if ($SkipPush) {
                 $taskArguments["SkipPush"] = $true

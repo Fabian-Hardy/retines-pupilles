@@ -32,6 +32,8 @@ param(
 
     [switch]$RunBackendValidation,
 
+    [switch]$SkipCommit,
+
     [switch]$SkipPush,
 
     [switch]$SkipPullRequest,
@@ -513,6 +515,20 @@ $taskText
     $pendingChanges = @(Invoke-GitOutput status --porcelain)
     if ($pendingChanges.Count -eq 0) {
         throw "Codex completed without producing tracked changes to commit."
+    }
+
+    if ($SkipCommit) {
+        if (-not $SkipPush -or -not $SkipPullRequest) {
+            throw "-SkipCommit requires -SkipPush and -SkipPullRequest."
+        }
+
+        Write-Host "Local Codex run completed without commit because -SkipCommit was set." -ForegroundColor Green
+        Write-Host "Logs: $((Resolve-Path $runDir).Path)"
+
+        $runMetadata.status = "completed"
+        $runMetadata.completed_at = (Get-Date).ToString("o")
+        Write-RunMetadata -Metadata $runMetadata -Path $metadataPath
+        return
     }
 
     Invoke-LoggedNative -FilePath git -Arguments @("add", "--all") -LogPath $commandLog

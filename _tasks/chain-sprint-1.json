@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "defaultBaseBranch": "develop",
+  "_comment": "Initial empty queue. Add task entries only after their task files exist.",
+  "tasks": []
+}

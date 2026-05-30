@@ -102,3 +102,5 @@ site/
 logs/
 .local-codex/
 _site/
+_reports/*.md
+!_reports/.gitkeep
