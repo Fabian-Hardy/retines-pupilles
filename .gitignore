@@ -101,6 +101,7 @@ site/
 *.log
 logs/
 .local-codex/
+.local/agentic-control-plane/
 _site/
 _reports/*.md
 !_reports/.gitkeep

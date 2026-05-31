@@ -3,6 +3,9 @@
 TOOL-001 adds a local automation path that reduces manual copy and paste while
 keeping branch, validation, and review rules explicit.
 
+TOOL-005 adds the Python control-plane CLI for queue, state, dry-run, and
+policy inspection. See `docs/local-agentic-control-plane.md`.
+
 ## Architecture
 
 ```text
