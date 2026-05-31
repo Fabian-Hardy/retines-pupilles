@@ -149,7 +149,13 @@ async def test_get_patient_endpoint_returns_404_when_missing(
     response = await client.get(f"/api/v1/patients/{uuid4()}")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Patient not found"}
+    assert response.json() == {
+        "error": {
+            "code": "not_found",
+            "message": "Patient not found",
+            "details": None,
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -225,7 +231,13 @@ async def test_update_patient_endpoint_returns_404_when_missing(
     )
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Patient not found"}
+    assert response.json() == {
+        "error": {
+            "code": "not_found",
+            "message": "Patient not found",
+            "details": None,
+        },
+    }
     assert override_db_dependency.committed is False
 
 
@@ -292,7 +304,13 @@ async def test_delete_patient_endpoint_returns_404_when_missing(
     response = await client.delete(f"/api/v1/patients/{uuid4()}")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Patient not found"}
+    assert response.json() == {
+        "error": {
+            "code": "not_found",
+            "message": "Patient not found",
+            "details": None,
+        },
+    }
     assert override_db_dependency.committed is False
 
 
@@ -454,3 +472,11 @@ async def test_list_patients_endpoint_rejects_invalid_pagination(
     response = await client.get(f"/api/v1/patients?{query_string}")
 
     assert response.status_code == 422
+    body: dict[str, Any] = response.json()
+    assert body["error"]["code"] == "validation_error"
+    assert body["error"]["message"] == "Request validation failed"
+
+    details = body["error"]["details"]
+    assert isinstance(details, list)
+    assert details
+    assert all(set(error) <= {"loc", "msg", "type"} for error in details)
