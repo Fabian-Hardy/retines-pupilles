@@ -56,7 +56,7 @@ async def login_user_endpoint(
     user = await authenticate_user(
         session,
         email=str(login_in.email),
-        password=login_in.password,
+        password=login_in.password.get_secret_value(),
     )
     if user is None or not user.is_active:
         raise _invalid_credentials_exception()

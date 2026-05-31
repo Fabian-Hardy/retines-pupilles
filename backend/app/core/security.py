@@ -10,9 +10,14 @@ from app.core.config import settings
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_TYPE = "access"
+PASSWORD_HASH_ROUNDS = 600_000
 
 json_web_token = JsonWebToken([JWT_ALGORITHM])
-password_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+password_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+    pbkdf2_sha256__rounds=PASSWORD_HASH_ROUNDS,
+)
 
 
 class InvalidTokenError(ValueError):
@@ -28,7 +33,10 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Return whether a plaintext password matches a stored hash."""
 
-    return bool(password_context.verify(plain_password, hashed_password))
+    try:
+        return bool(password_context.verify(plain_password, hashed_password))
+    except ValueError:
+        return False
 
 
 def create_access_token(
@@ -83,6 +91,7 @@ def decode_access_token(token: str) -> UUID:
 
 __all__ = [
     "InvalidTokenError",
+    "PASSWORD_HASH_ROUNDS",
     "create_access_token",
     "decode_access_token",
     "hash_password",
