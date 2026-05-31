@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.errors import register_exception_handlers
 from app.api.v1.router import api_router
 from app.core.config import settings
 
@@ -33,6 +34,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,

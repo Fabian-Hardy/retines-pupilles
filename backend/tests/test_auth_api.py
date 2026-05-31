@@ -132,7 +132,13 @@ async def test_register_user_endpoint_rejects_duplicate_email(
     )
 
     assert response.status_code == 409
-    assert response.json() == {"detail": "Email already registered"}
+    assert response.json() == {
+        "error": {
+            "code": "conflict",
+            "message": "Email already registered",
+            "details": None,
+        },
+    }
     assert override_db_dependency.committed is False
 
 
@@ -190,7 +196,13 @@ async def test_login_user_endpoint_rejects_invalid_credentials(
     )
 
     assert response.status_code == 401
-    assert response.json() == {"detail": "Invalid email or password"}
+    assert response.json() == {
+        "error": {
+            "code": "unauthorized",
+            "message": "Invalid email or password",
+            "details": None,
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -228,6 +240,13 @@ async def test_read_current_user_endpoint_rejects_missing_token(
     response = await client.get("/api/v1/auth/me")
 
     assert response.status_code == 401
+    assert response.json() == {
+        "error": {
+            "code": "unauthorized",
+            "message": "Not authenticated",
+            "details": None,
+        },
+    }
 
 
 @pytest.mark.asyncio
@@ -246,4 +265,41 @@ async def test_read_current_user_endpoint_rejects_invalid_token(
     )
 
     assert response.status_code == 401
-    assert response.json() == {"detail": "Could not validate credentials"}
+    assert response.json() == {
+        "error": {
+            "code": "unauthorized",
+            "message": "Could not validate credentials",
+            "details": None,
+        },
+    }
+
+
+@pytest.mark.asyncio
+async def test_read_current_user_endpoint_rejects_inactive_user(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    user = build_user(is_active=False)
+    access_token = create_access_token(user.id)
+
+    async def get_user_stub(session: object, user_id: UUID) -> User:
+        assert session is override_db_dependency
+        assert user_id == user.id
+        return user
+
+    monkeypatch.setattr(auth_dependencies, "get_user", get_user_stub)
+
+    response = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "code": "bad_request",
+            "message": "Inactive user",
+            "details": None,
+        },
+    }
