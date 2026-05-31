@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 
 from app.core.security import (
+    PASSWORD_HASH_ROUNDS,
     InvalidTokenError,
     create_access_token,
     decode_access_token,
@@ -18,8 +19,14 @@ def test_password_hashing_verifies_matching_password() -> None:
     hashed_password = hash_password("correct-password")
 
     assert hashed_password != "correct-password"
+    assert "correct-password" not in hashed_password
+    assert hashed_password.startswith(f"$pbkdf2-sha256${PASSWORD_HASH_ROUNDS}$")
     assert verify_password("correct-password", hashed_password) is True
     assert verify_password("wrong-password", hashed_password) is False
+
+
+def test_password_verification_rejects_malformed_hash() -> None:
+    assert verify_password("correct-password", "not-a-passlib-hash") is False
 
 
 def test_access_token_round_trips_user_subject() -> None:

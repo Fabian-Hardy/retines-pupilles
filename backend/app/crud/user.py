@@ -21,7 +21,7 @@ async def create_user(session: AsyncSession, user_in: UserCreate) -> User:
 
     user = User(
         email=normalize_email(str(user_in.email)),
-        hashed_password=hash_password(user_in.password),
+        hashed_password=hash_password(user_in.password.get_secret_value()),
         full_name=user_in.full_name,
     )
 

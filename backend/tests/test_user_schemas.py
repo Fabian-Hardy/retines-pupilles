@@ -18,8 +18,9 @@ def test_user_create_normalizes_email_and_strips_full_name() -> None:
     )
 
     assert schema.email == "fabian@example.com"
-    assert schema.password == "correct-password"
+    assert schema.password.get_secret_value() == "correct-password"
     assert schema.full_name == "Fabian Hardy"
+    assert "correct-password" not in repr(schema)
 
 
 def test_user_create_rejects_short_password() -> None:
@@ -31,7 +32,16 @@ def test_login_request_normalizes_email() -> None:
     schema = LoginRequest(email="  Fabian@Example.com  ", password="secret")
 
     assert schema.email == "fabian@example.com"
-    assert schema.password == "secret"
+    assert schema.password.get_secret_value() == "secret"
+    assert "secret" not in repr(schema)
+
+
+def test_login_request_rejects_empty_or_overlong_password() -> None:
+    with pytest.raises(ValidationError):
+        LoginRequest(email="fabian@example.com", password="")
+
+    with pytest.raises(ValidationError):
+        LoginRequest(email="fabian@example.com", password="x" * 129)
 
 
 def test_token_response_defaults_to_bearer_token_type() -> None:

@@ -82,7 +82,7 @@ async def test_register_user_endpoint_returns_created_user(
     async def create_user_stub(session: object, user_in: UserCreate) -> User:
         assert session is override_db_dependency
         assert user_in.email == "fabian@example.com"
-        assert user_in.password == "correct-password"
+        assert user_in.password.get_secret_value() == "correct-password"
         return created_user
 
     monkeypatch.setattr(auth_endpoints, "get_user_by_email", get_user_by_email_stub)
@@ -140,6 +140,20 @@ async def test_register_user_endpoint_rejects_duplicate_email(
         },
     }
     assert override_db_dependency.committed is False
+
+
+@pytest.mark.asyncio
+async def test_register_user_endpoint_does_not_echo_invalid_password(
+    client: AsyncClient,
+) -> None:
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "fabian@example.com", "password": "s3c"},
+    )
+
+    assert response.status_code == 422
+    assert "s3c" not in response.text
+    assert "password" in response.text
 
 
 @pytest.mark.asyncio

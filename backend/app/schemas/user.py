@@ -4,9 +4,10 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, SecretStr, StringConstraints, field_validator
 
-Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]
+Password = Annotated[SecretStr, StringConstraints(min_length=8, max_length=128)]
+CredentialPassword = Annotated[SecretStr, StringConstraints(min_length=1, max_length=128)]
 OptionalFullName = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=255),
@@ -59,7 +60,7 @@ class LoginRequest(BaseModel):
     """Payload used to request an access token."""
 
     email: EmailStr
-    password: str
+    password: CredentialPassword
 
     @field_validator("email", mode="before")
     @classmethod
