@@ -57,4 +57,23 @@ async def get_current_active_user(
     return current_user
 
 
-__all__ = ["get_current_active_user", "get_current_user", "oauth2_scheme"]
+async def get_current_admin_user(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> User:
+    """Return the current active user only when admin privileges are present."""
+
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+
+    return current_user
+
+
+__all__ = [
+    "get_current_active_user",
+    "get_current_admin_user",
+    "get_current_user",
+    "oauth2_scheme",
+]
