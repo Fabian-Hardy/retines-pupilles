@@ -1,6 +1,4 @@
 """Central API exception handlers."""
-
-import logging
 from collections.abc import Awaitable, Callable, Mapping
 from http import HTTPStatus
 from typing import Any, cast
@@ -10,9 +8,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.logging import get_logger
 from app.schemas.error import ApiError, ApiErrorResponse
 
-logger = logging.getLogger("retines")
+logger = get_logger(__name__)
 ExceptionHandler = Callable[[Request, Exception], Response | Awaitable[Response]]
 
 ERROR_CODES_BY_STATUS = {
@@ -88,7 +87,15 @@ async def unhandled_exception_handler(
 ) -> JSONResponse:
     """Return a safe generic response for unexpected errors."""
 
-    logger.error("Unhandled API error: %s %s", request.method, request.url.path)
+    logger.error(
+        "unhandled_api_error",
+        extra={
+            "event": "unhandled_api_error",
+            "http_method": request.method,
+            "http_path": request.url.path,
+            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+        },
+    )
     return _error_response(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         code=ERROR_CODES_BY_STATUS[status.HTTP_500_INTERNAL_SERVER_ERROR],
