@@ -10,11 +10,12 @@ import {
 
 import {
   ApiError,
+  apiClient,
   type CurrentUser,
   type LoginRequest,
   loginUser,
   readCurrentUser,
-} from "./api";
+} from "@/api";
 
 type SessionStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -74,6 +75,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const currentUser = await readCurrentUser(currentAccessToken);
 
         if (isCurrent) {
+          apiClient.setAccessToken(currentAccessToken);
           setUser(currentUser);
           setStatus("authenticated");
         }
@@ -98,12 +100,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const token = await loginUser(payload);
     const currentUser = await readCurrentUser(token.access_token);
 
+    apiClient.setAccessToken(token.access_token);
     storeAccessToken(token.access_token);
     setUser(currentUser);
     setStatus("authenticated");
   }, []);
 
   const logout = useCallback(() => {
+    apiClient.clearAccessToken();
     clearStoredAccessToken();
     setUser(null);
     setStatus("unauthenticated");
