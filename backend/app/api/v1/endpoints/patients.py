@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies.auth import get_current_active_user
 from app.crud.patient import (
     PatientListFilters,
     count_patients,
@@ -16,6 +17,7 @@ from app.crud.patient import (
     update_patient,
 )
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.patient import (
     LanguageCode,
     PatientCreate,
@@ -27,12 +29,14 @@ from app.schemas.patient import (
 router = APIRouter(prefix="/patients", tags=["patients"])
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 
 
 @router.post("", response_model=PatientRead, status_code=status.HTTP_201_CREATED)
 async def create_patient_endpoint(
     patient_in: PatientCreate,
     session: DbSession,
+    _current_user: CurrentActiveUser,
 ) -> PatientRead:
     """Create a patient."""
 
@@ -46,6 +50,7 @@ async def create_patient_endpoint(
 async def get_patient_endpoint(
     patient_id: UUID,
     session: DbSession,
+    _current_user: CurrentActiveUser,
 ) -> PatientRead:
     """Return a patient by ID."""
 
@@ -65,6 +70,7 @@ async def update_patient_endpoint(
     patient_id: UUID,
     patient_in: PatientUpdate,
     session: DbSession,
+    _current_user: CurrentActiveUser,
 ) -> PatientRead:
     """Partially update a patient."""
 
@@ -86,6 +92,7 @@ async def update_patient_endpoint(
 async def delete_patient_endpoint(
     patient_id: UUID,
     session: DbSession,
+    _current_user: CurrentActiveUser,
 ) -> Response:
     """Delete a patient."""
 
@@ -106,6 +113,7 @@ async def delete_patient_endpoint(
 @router.get("", response_model=PatientListResponse)
 async def list_patients_endpoint(
     session: DbSession,
+    _current_user: CurrentActiveUser,
     q: Annotated[str | None, Query(max_length=254)] = None,
     first_name: Annotated[str | None, Query(max_length=100)] = None,
     last_name: Annotated[str | None, Query(max_length=100)] = None,

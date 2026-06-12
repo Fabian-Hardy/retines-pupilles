@@ -8,11 +8,14 @@ from uuid import UUID, uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.api.dependencies import auth as auth_dependencies
 from app.api.v1.endpoints import patients as patient_endpoints
+from app.core.security import create_access_token
 from app.crud.patient import PatientListFilters
 from app.db.session import get_db
 from app.main import app
 from app.models.patient import Patient
+from app.models.user import User
 from app.schemas.patient import PatientCreate, PatientUpdate
 
 
@@ -51,6 +54,19 @@ def build_patient(
     return patient
 
 
+def build_user(*, user_id: UUID | None = None) -> User:
+    user = User()
+    user.id = user_id or uuid4()
+    user.created_at = datetime(2026, 5, 30, 9, 0, tzinfo=UTC)
+    user.updated_at = datetime(2026, 5, 30, 9, 30, tzinfo=UTC)
+    user.email = "fabian@example.com"
+    user.hashed_password = "hashed-password"
+    user.full_name = "Fabian Hardy"
+    user.is_active = True
+    user.is_superuser = False
+    return user
+
+
 @pytest.fixture(autouse=True)
 def override_db_dependency() -> Iterator[SessionDouble]:
     session = SessionDouble()
@@ -73,11 +89,75 @@ async def client() -> AsyncIterator[AsyncClient]:
         yield async_client
 
 
+@pytest.fixture
+def authenticated_headers(
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> dict[str, str]:
+    user = build_user()
+    access_token = create_access_token(user.id)
+
+    async def get_user_stub(session: object, user_id: UUID) -> User:
+        assert session is override_db_dependency
+        assert user_id == user.id
+        return user
+
+    monkeypatch.setattr(auth_dependencies, "get_user", get_user_stub)
+
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "json_body"),
+    [
+        ("GET", "/api/v1/patients", None),
+        ("GET", "/api/v1/patients/00000000-0000-4000-8000-000000000001", None),
+        (
+            "POST",
+            "/api/v1/patients",
+            {
+                "first_name": "Jeanne",
+                "last_name": "Dupont",
+                "date_of_birth": "1990-05-17",
+            },
+        ),
+        (
+            "PATCH",
+            "/api/v1/patients/00000000-0000-4000-8000-000000000001",
+            {"city": "Liege"},
+        ),
+        ("DELETE", "/api/v1/patients/00000000-0000-4000-8000-000000000001", None),
+    ],
+    ids=["list", "detail", "create", "update", "delete"],
+)
+@pytest.mark.asyncio
+async def test_patient_endpoints_reject_missing_token(
+    client: AsyncClient,
+    method: str,
+    path: str,
+    json_body: dict[str, str] | None,
+) -> None:
+    if json_body is None:
+        response = await client.request(method, path)
+    else:
+        response = await client.request(method, path, json=json_body)
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": {
+            "code": "unauthorized",
+            "message": "Not authenticated",
+            "details": None,
+        },
+    }
+
+
 @pytest.mark.asyncio
 async def test_create_patient_endpoint_returns_created_patient(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
     override_db_dependency: SessionDouble,
+    authenticated_headers: dict[str, str],
 ) -> None:
     created_patient = build_patient()
 
@@ -101,6 +181,7 @@ async def test_create_patient_endpoint_returns_created_patient(
             "email": "jeanne.dupont@example.com",
             "city": "Verviers",
         },
+        headers=authenticated_headers,
     )
 
     assert response.status_code == 201
@@ -117,6 +198,7 @@ async def test_create_patient_endpoint_returns_created_patient(
 async def test_get_patient_endpoint_returns_patient(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
 ) -> None:
     patient_id = uuid4()
     patient = build_patient(patient_id=patient_id)
@@ -127,7 +209,10 @@ async def test_get_patient_endpoint_returns_patient(
 
     monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
 
-    response = await client.get(f"/api/v1/patients/{patient_id}")
+    response = await client.get(
+        f"/api/v1/patients/{patient_id}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 200
 
@@ -140,13 +225,17 @@ async def test_get_patient_endpoint_returns_patient(
 async def test_get_patient_endpoint_returns_404_when_missing(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
 ) -> None:
     async def get_patient_stub(session: object, requested_id: UUID) -> None:
         return None
 
     monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
 
-    response = await client.get(f"/api/v1/patients/{uuid4()}")
+    response = await client.get(
+        f"/api/v1/patients/{uuid4()}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -163,6 +252,7 @@ async def test_update_patient_endpoint_updates_patient(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
     override_db_dependency: SessionDouble,
+    authenticated_headers: dict[str, str],
 ) -> None:
     patient_id = uuid4()
     patient = build_patient(patient_id=patient_id)
@@ -193,6 +283,7 @@ async def test_update_patient_endpoint_updates_patient(
     response = await client.patch(
         f"/api/v1/patients/{patient_id}",
         json={"city": "Liege"},
+        headers=authenticated_headers,
     )
 
     assert response.status_code == 200
@@ -208,6 +299,7 @@ async def test_update_patient_endpoint_returns_404_when_missing(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
     override_db_dependency: SessionDouble,
+    authenticated_headers: dict[str, str],
 ) -> None:
     async def get_patient_stub(
         session: object,
@@ -228,6 +320,7 @@ async def test_update_patient_endpoint_returns_404_when_missing(
     response = await client.patch(
         f"/api/v1/patients/{uuid4()}",
         json={"city": "Liege"},
+        headers=authenticated_headers,
     )
 
     assert response.status_code == 404
@@ -246,6 +339,7 @@ async def test_delete_patient_endpoint_deletes_patient(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
     override_db_dependency: SessionDouble,
+    authenticated_headers: dict[str, str],
 ) -> None:
     patient_id = uuid4()
     patient = build_patient(patient_id=patient_id)
@@ -272,7 +366,10 @@ async def test_delete_patient_endpoint_deletes_patient(
     monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
     monkeypatch.setattr(patient_endpoints, "delete_patient", delete_patient_stub)
 
-    response = await client.delete(f"/api/v1/patients/{patient_id}")
+    response = await client.delete(
+        f"/api/v1/patients/{patient_id}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 204
     assert response.content == b""
@@ -285,6 +382,7 @@ async def test_delete_patient_endpoint_returns_404_when_missing(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
     override_db_dependency: SessionDouble,
+    authenticated_headers: dict[str, str],
 ) -> None:
     async def get_patient_stub(
         session: object,
@@ -301,7 +399,10 @@ async def test_delete_patient_endpoint_returns_404_when_missing(
     monkeypatch.setattr(patient_endpoints, "get_patient", get_patient_stub)
     monkeypatch.setattr(patient_endpoints, "delete_patient", delete_patient_stub)
 
-    response = await client.delete(f"/api/v1/patients/{uuid4()}")
+    response = await client.delete(
+        f"/api/v1/patients/{uuid4()}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -318,6 +419,7 @@ async def test_delete_patient_endpoint_returns_404_when_missing(
 async def test_list_patients_endpoint_returns_paginated_response_shape(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
 ) -> None:
     first_patient = build_patient(first_name="Jeanne", last_name="Dupont")
     second_patient = build_patient(first_name="Louis", last_name="Martin")
@@ -345,7 +447,7 @@ async def test_list_patients_endpoint_returns_paginated_response_shape(
     monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
     monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
 
-    response = await client.get("/api/v1/patients")
+    response = await client.get("/api/v1/patients", headers=authenticated_headers)
 
     assert response.status_code == 200
 
@@ -363,6 +465,7 @@ async def test_list_patients_endpoint_returns_paginated_response_shape(
 async def test_list_patients_endpoint_forwards_pagination(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
 ) -> None:
     async def count_patients_stub(
         session: object,
@@ -387,7 +490,10 @@ async def test_list_patients_endpoint_forwards_pagination(
     monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
     monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
 
-    response = await client.get("/api/v1/patients?offset=5&limit=10")
+    response = await client.get(
+        "/api/v1/patients?offset=5&limit=10",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 200
     assert response.json()["offset"] == 5
@@ -408,6 +514,7 @@ async def test_list_patients_endpoint_forwards_pagination(
 async def test_list_patients_endpoint_forwards_filters(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
     query_string: str,
     expected_filters: PatientListFilters,
 ) -> None:
@@ -434,7 +541,10 @@ async def test_list_patients_endpoint_forwards_filters(
     monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
     monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
 
-    response = await client.get(f"/api/v1/patients?{query_string}")
+    response = await client.get(
+        f"/api/v1/patients?{query_string}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 200
 
@@ -448,6 +558,7 @@ async def test_list_patients_endpoint_forwards_filters(
 async def test_list_patients_endpoint_rejects_invalid_pagination(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
+    authenticated_headers: dict[str, str],
     query_string: str,
 ) -> None:
     async def count_patients_stub(
@@ -469,7 +580,10 @@ async def test_list_patients_endpoint_rejects_invalid_pagination(
     monkeypatch.setattr(patient_endpoints, "count_patients", count_patients_stub)
     monkeypatch.setattr(patient_endpoints, "list_patients", list_patients_stub)
 
-    response = await client.get(f"/api/v1/patients?{query_string}")
+    response = await client.get(
+        f"/api/v1/patients?{query_string}",
+        headers=authenticated_headers,
+    )
 
     assert response.status_code == 422
     body: dict[str, Any] = response.json()
