@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = Field(default=..., min_length=32)
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, ge=1)
     LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "json"
 
     # --- Database ---
     # DATABASE_URL is the canonical field. If absent it is assembled from DB_*.

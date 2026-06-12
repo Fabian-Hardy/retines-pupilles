@@ -77,5 +77,7 @@ nav:
   - Déploiement:
     - Migration serveur: deploy/migration.md
     - Sauvegardes: deploy/backup.md
+  - Exploitation:
+    - Logs backend: operations/logging.md
   - Guide utilisateur:
     - Guide Allyson: user/guide-allyson.md

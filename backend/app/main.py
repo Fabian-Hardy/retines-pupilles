@@ -1,4 +1,3 @@
-import logging
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -9,24 +8,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.errors import register_exception_handlers
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.logging import configure_logging, get_logger
 
-logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
-    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-)
-logger = logging.getLogger("retines")
+configure_logging(log_level=settings.LOG_LEVEL, log_format=settings.LOG_FORMAT)
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     logger.info(
-        "startup: env=%s version=%s domain=%s",
-        settings.APP_ENV,
-        settings.APP_VERSION,
-        settings.APP_DOMAIN,
+        "application_startup",
+        extra={
+            "event": "application_startup",
+            "app_env": settings.APP_ENV,
+            "app_version": settings.APP_VERSION,
+            "app_domain": settings.APP_DOMAIN,
+        },
     )
     yield
-    logger.info("shutdown: bye")
+    logger.info("application_shutdown", extra={"event": "application_shutdown"})
 
 
 app = FastAPI(
@@ -54,11 +54,14 @@ async def log_requests(
     response = await call_next(request)
     elapsed_ms = (time.perf_counter() - start) * 1000
     logger.info(
-        "%s %s -> %d (%.1fms)",
-        request.method,
-        request.url.path,
-        response.status_code,
-        elapsed_ms,
+        "http_request",
+        extra={
+            "event": "http_request",
+            "http_method": request.method,
+            "http_path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": round(elapsed_ms, 1),
+        },
     )
     return response
 
