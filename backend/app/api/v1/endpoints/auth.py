@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies.auth import get_current_active_user
+from app.api.dependencies.auth import get_current_active_user, get_current_user
 from app.core.security import create_access_token
 from app.crud.user import authenticate_user, create_user, get_user_by_email
 from app.db.session import get_db
@@ -15,6 +15,7 @@ from app.schemas.user import LoginRequest, TokenResponse, UserCreate, UserRead
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 
 
@@ -62,6 +63,13 @@ async def login_user_endpoint(
         raise _invalid_credentials_exception()
 
     return TokenResponse(access_token=create_access_token(user.id))
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_user_endpoint(_current_user: CurrentUser) -> None:
+    """Accept logout for a valid Bearer token."""
+
+    return None
 
 
 @router.get("/me", response_model=UserRead)

@@ -187,6 +187,8 @@ async def test_login_user_endpoint_returns_bearer_token_for_valid_credentials(
     body = response.json()
     assert body["token_type"] == "bearer"
     assert decode_access_token(body["access_token"]) == user.id
+    assert "hashed_password" not in body
+    assert "hashed_password" not in response.text
 
 
 @pytest.mark.asyncio
@@ -220,6 +222,47 @@ async def test_login_user_endpoint_rejects_invalid_credentials(
 
 
 @pytest.mark.asyncio
+async def test_logout_user_endpoint_accepts_valid_bearer_token(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    override_db_dependency: SessionDouble,
+) -> None:
+    user = build_user()
+    access_token = create_access_token(user.id)
+
+    async def get_user_stub(session: object, user_id: UUID) -> User:
+        assert session is override_db_dependency
+        assert user_id == user.id
+        return user
+
+    monkeypatch.setattr(auth_dependencies, "get_user", get_user_stub)
+
+    response = await client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+@pytest.mark.asyncio
+async def test_logout_user_endpoint_rejects_missing_token(
+    client: AsyncClient,
+) -> None:
+    response = await client.post("/api/v1/auth/logout")
+
+    assert response.status_code == 401
+    assert response.json() == {
+        "error": {
+            "code": "unauthorized",
+            "message": "Not authenticated",
+            "details": None,
+        },
+    }
+
+
+@pytest.mark.asyncio
 async def test_read_current_user_endpoint_returns_user_for_valid_bearer_token(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
@@ -245,6 +288,8 @@ async def test_read_current_user_endpoint_returns_user_for_valid_bearer_token(
     body = response.json()
     assert body["id"] == str(user.id)
     assert body["email"] == "fabian@example.com"
+    assert "hashed_password" not in body
+    assert "hashed_password" not in response.text
 
 
 @pytest.mark.asyncio
