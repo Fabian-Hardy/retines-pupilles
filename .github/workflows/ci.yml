@@ -18,11 +18,11 @@ jobs:
       - name: Install deps
         run: pip install -e 'backend[dev]' --break-system-packages 2>/dev/null || true
       - name: Ruff
-        run: cd backend && ruff check app/ || true
+        run: cd backend && ruff check app/
       - name: Mypy
-        run: cd backend && mypy app/ || true
+        run: cd backend && mypy app/
       - name: Tests
-        run: cd backend && pytest tests/ -v || true
+        run: cd backend && pytest tests/ -v
 
   frontend:
     name: Frontend (tsc + eslint)
@@ -35,6 +35,6 @@ jobs:
       - name: Install deps
         run: cd frontend && npm ci || true
       - name: Type check
-        run: cd frontend && npx tsc --noEmit || true
+        run: cd frontend && npx tsc --noEmit
       - name: Lint
-        run: cd frontend && npm run lint || true
+        run: cd frontend && npm run lint
