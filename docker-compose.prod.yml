@@ -11,10 +11,10 @@ services:
       - LOG_LEVEL=INFO
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=traefik-public"
       # Route /api vers le backend
       - "traefik.http.routers.retines-backend.rule=Host(`app.retineetpupille.be`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.retines-backend.entrypoints=https"
+      - "traefik.http.routers.retines-backend.entrypoints=websecure"
       - "traefik.http.routers.retines-backend.tls=true"
       - "traefik.http.routers.retines-backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.retines-backend.loadbalancer.server.port=8000"
@@ -23,7 +23,7 @@ services:
       # - "traefik.http.routers.retines-backend.middlewares=strip-api"
     networks:
       - retines-net
-      - proxy
+      - traefik-public
 
   frontend:
     restart: always
@@ -31,9 +31,9 @@ services:
       - NODE_ENV=production
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
+      - "traefik.docker.network=traefik-public"
       - "traefik.http.routers.retines-frontend.rule=Host(`app.retineetpupille.be`)"
-      - "traefik.http.routers.retines-frontend.entrypoints=https"
+      - "traefik.http.routers.retines-frontend.entrypoints=websecure"
       - "traefik.http.routers.retines-frontend.tls=true"
       - "traefik.http.routers.retines-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.retines-frontend.loadbalancer.server.port=80"
@@ -42,7 +42,7 @@ services:
       - "traefik.http.routers.retines-backend.priority=10"
     networks:
       - retines-net
-      - proxy
+      - traefik-public
 
   postgresql:
     restart: always
@@ -51,5 +51,5 @@ services:
     restart: always
 
 networks:
-  proxy:
+  traefik-public:
     external: true
