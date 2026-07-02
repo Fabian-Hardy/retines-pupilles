@@ -79,7 +79,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
           setStatus("authenticated");
         }
-      } catch (error) {
+      } catch {
         clearStoredAccessToken();
 
         if (isCurrent) {
