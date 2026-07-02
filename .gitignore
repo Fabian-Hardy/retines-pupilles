@@ -1,7 +1,6 @@
 # ============================================================
 # .gitignore — Rétines & Pupilles
 # Python + Node + Docker + données sensibles
-# ============================================================
 
 # --- Environnement (JAMAIS committer) ---
 .env
@@ -11,7 +10,6 @@
 .env.staging
 # Garder l'exemple
 !.env.example
-
 # --- Python ---
 __pycache__/
 *.py[cod]
@@ -37,21 +35,18 @@ share/python-wheels/
 *.egg
 MANIFEST
 *.pyo
-
 # Virtualenv
 .venv/
 venv/
 ENV/
 env.bak/
 venv.bak/
-
 # Type checkers & linters
 .mypy_cache/
 .ruff_cache/
 .dmypy.json
 dmypy.json
 .pytype/
-
 # Tests
 .pytest_cache/
 .coverage
@@ -61,10 +56,8 @@ nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
-
 # Alembic (généré)
 # Ne pas ignorer les fichiers de migration — ils sont versionnés
-
 # --- Node / Frontend ---
 node_modules/
 npm-debug.log*
@@ -73,26 +66,20 @@ yarn-error.log*
 pnpm-debug.log*
 .npm
 .yarn-integrity
-
 # Build Vite / React
-dist/
 dist-ssr/
 .vite/
 *.local
-
 # TypeScript
 *.tsbuildinfo
-
 # --- Docker / Infrastructure ---
 # Certificats Let's Encrypt — JAMAIS committer
 acme.json
 traefik/acme.json
-
 # --- Backups ---
 backups/
 *.sql.gz
 *.dump
-
 # --- OS ---
 .DS_Store
 .DS_Store?
@@ -102,17 +89,19 @@ backups/
 ehthumbs.db
 Thumbs.db
 desktop.ini
-
 # --- IDE ---
 .idea/
 .vscode/settings.json
 *.swp
 *.swo
 *~
-
 # --- MkDocs ---
 site/
-
 # --- Logs ---
 *.log
 logs/
+.local-codex/
+.local/agentic-control-plane/
+_site/
+_reports/*.md
+!_reports/.gitkeep

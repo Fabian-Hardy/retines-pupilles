@@ -1,0 +1,68 @@
+{
+  "repo": "Fabian-Hardy/retines-pupilles",
+  "labels": [
+    { "name": "agent:codex", "color": "5319E7", "description": "Handled by Codex agent" },
+    { "name": "status:planned", "color": "D4C5F9", "description": "Planned but not ready for Codex" },
+    { "name": "status:ready-for-codex", "color": "0E8A16", "description": "Ready to be picked up by Codex orchestration" },
+    { "name": "version:v0.2.0", "color": "1D76DB", "description": "Target version v0.2.0" },
+    { "name": "version:v0.3.0", "color": "1D76DB", "description": "Target version v0.3.0" },
+    { "name": "version:v1.0.0", "color": "1D76DB", "description": "Target version v1.0.0" },
+    { "name": "type:backend", "color": "0052CC", "description": "Backend task" },
+    { "name": "type:frontend", "color": "5319E7", "description": "Frontend task" },
+    { "name": "type:docs", "color": "0075CA", "description": "Documentation task" },
+    { "name": "type:security", "color": "D93F0B", "description": "Security task" },
+    { "name": "type:devops", "color": "C5DEF5", "description": "DevOps task" },
+    { "name": "risk:low", "color": "0E8A16", "description": "Low risk task" },
+    { "name": "risk:medium", "color": "FBCA04", "description": "Medium risk task" },
+    { "name": "risk:high", "color": "D93F0B", "description": "High risk task" }
+  ],
+  "waves": [
+    {
+      "id": "wave-01-current",
+      "description": "Current safe parallel wave: Patient API, frontend shell, User model, and ops docs.",
+      "tasks": [
+        { "task": "TASK-010", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:backend", "risk:medium"] },
+        { "task": "TASK-012", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.3.0", "type:frontend", "risk:medium"] },
+        { "task": "TASK-013", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:backend", "risk:medium"] },
+        { "task": "TASK-086", "labels": ["agent:codex", "status:ready-for-codex", "version:v1.0.0", "type:docs", "risk:low"] },
+        { "task": "TASK-087", "labels": ["agent:codex", "status:ready-for-codex", "version:v1.0.0", "type:docs", "risk:low"] }
+      ]
+    },
+    {
+      "id": "wave-02-auth-foundation",
+      "description": "Auth foundation wave after TASK-013 is merged.",
+      "requires": ["TASK-013"],
+      "tasks": [
+        { "task": "TASK-014", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:security", "risk:medium"] },
+        { "task": "TASK-016", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:security", "risk:medium"] }
+      ]
+    },
+    {
+      "id": "wave-03-auth-api",
+      "description": "Login API wave after User model and password handling are merged.",
+      "requires": ["TASK-013", "TASK-014"],
+      "tasks": [
+        { "task": "TASK-015", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:backend", "risk:high"] }
+      ]
+    },
+    {
+      "id": "wave-04-protect-api",
+      "description": "Protect Patient API after patient pagination, login API, and RBAC are merged.",
+      "requires": ["TASK-010", "TASK-015", "TASK-016"],
+      "tasks": [
+        { "task": "TASK-017", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:security", "risk:high"] },
+        { "task": "TASK-018", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.2.0", "type:backend", "risk:medium"] }
+      ]
+    },
+    {
+      "id": "wave-05-frontend-patient",
+      "description": "Frontend patient wave after shell, patient pagination, and typed client are ready.",
+      "requires": ["TASK-010", "TASK-012", "TASK-020"],
+      "tasks": [
+        { "task": "TASK-022", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.3.0", "type:frontend", "risk:medium"] },
+        { "task": "TASK-023", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.3.0", "type:frontend", "risk:medium"] },
+        { "task": "TASK-024", "labels": ["agent:codex", "status:ready-for-codex", "version:v0.3.0", "type:frontend", "risk:medium"] }
+      ]
+    }
+  ]
+}

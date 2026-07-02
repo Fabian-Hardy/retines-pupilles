@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, 'feature/**', 'fix/**']
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    name: Backend (ruff + mypy + pytest)
+    runs-on: ubuntu-latest
+    env:
+      # Valeurs de test uniquement — jamais utilisées en dehors de ce job CI.
+      APP_SECRET_KEY: "ci-test-app-secret-key-not-for-production-000000"
+      JWT_SECRET_KEY: "ci-test-jwt-secret-key-not-for-production-000000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: pip install -e 'backend[dev]' --break-system-packages 2>/dev/null || true
+      - name: Ruff
+        run: cd backend && ruff check app/
+      - name: Mypy
+        run: cd backend && mypy app/
+      - name: Tests
+        run: cd backend && pytest tests/ -v
+
+  frontend:
+    name: Frontend (tsc + eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: cd frontend && npm ci || true
+      - name: Type check
+        run: cd frontend && npx tsc --noEmit
+      - name: Lint
+        run: cd frontend && npm run lint

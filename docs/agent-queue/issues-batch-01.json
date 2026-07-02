@@ -1,0 +1,458 @@
+[
+  {
+    "id": "TASK-014",
+    "title": "Password and credential handling",
+    "version": "v0.2.0",
+    "type": "security",
+    "risk": "medium",
+    "branch": "codex/task-014-password-credential-handling",
+    "dependencies": ["TASK-013"],
+    "objective": "Add password hashing and credential validation utilities without adding login endpoints yet.",
+    "files": ["backend/app/core/security.py", "backend/tests/"],
+    "acceptance": [
+      "Password hashing utility exists and uses the existing passlib bcrypt dependency.",
+      "Password verification utility exists and is covered by tests.",
+      "Credential helpers are typed and reusable by future auth endpoints.",
+      "No plaintext password is stored or logged.",
+      "No login/logout endpoint is added in this task."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-015",
+    "title": "Login/logout/me API",
+    "version": "v0.2.0",
+    "type": "backend",
+    "risk": "high",
+    "branch": "codex/task-015-login-logout-me-api",
+    "dependencies": ["TASK-013", "TASK-014"],
+    "objective": "Add authentication endpoints for login, logout, and current user using the established User model and credential helpers.",
+    "files": ["backend/app/api/v1/endpoints/", "backend/app/schemas/", "backend/app/core/", "backend/tests/"],
+    "acceptance": [
+      "Login endpoint validates user credentials.",
+      "Current user endpoint returns the authenticated user.",
+      "Logout behavior is explicitly implemented or documented depending on the chosen session/token strategy.",
+      "Inactive users cannot authenticate.",
+      "Tests cover success, bad password, unknown user, inactive user, and current user behavior."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-016",
+    "title": "Role-based access control",
+    "version": "v0.2.0",
+    "type": "security",
+    "risk": "medium",
+    "branch": "codex/task-016-role-based-access-control",
+    "dependencies": ["TASK-013"],
+    "objective": "Add role-based access control primitives for admin, optician, staff, and readonly users.",
+    "files": ["backend/app/core/", "backend/app/api/", "backend/tests/"],
+    "acceptance": [
+      "Reusable role-checking dependency or helper exists.",
+      "Supported roles are admin, optician, staff, and readonly.",
+      "Role checks are tested without protecting Patient endpoints yet.",
+      "The implementation is compatible with FastAPI dependency injection.",
+      "Unauthorized and forbidden cases are distinguishable."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-017",
+    "title": "Protect Patient API with auth",
+    "version": "v0.2.0",
+    "type": "security",
+    "risk": "high",
+    "branch": "codex/task-017-protect-patient-api-with-auth",
+    "dependencies": ["TASK-010", "TASK-015", "TASK-016"],
+    "objective": "Require authenticated access and appropriate roles for Patient API endpoints.",
+    "files": ["backend/app/api/v1/endpoints/patients.py", "backend/tests/test_patient_api.py", "backend/tests/"],
+    "acceptance": [
+      "Patient endpoints reject unauthenticated requests.",
+      "Readonly users can read but cannot mutate Patient resources.",
+      "Authorized staff roles can create/update/delete according to the agreed role policy.",
+      "Tests cover unauthenticated, readonly, and authorized access.",
+      "Existing patient behavior remains intact for authorized users."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-018",
+    "title": "Standard API error contract",
+    "version": "v0.2.0",
+    "type": "backend",
+    "risk": "medium",
+    "branch": "codex/task-018-standard-api-error-contract",
+    "dependencies": [],
+    "objective": "Define and apply a consistent API error response contract for backend endpoints.",
+    "files": ["backend/app/", "backend/tests/"],
+    "acceptance": [
+      "A standard error schema or documented error shape exists.",
+      "Validation, not found, unauthorized, forbidden, and unexpected error cases are considered.",
+      "Tests cover representative error responses.",
+      "The implementation does not leak sensitive internal details.",
+      "Existing tests are updated intentionally where the response contract changes."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-020",
+    "title": "Typed API client",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-020-typed-api-client",
+    "dependencies": ["TASK-010", "TASK-012"],
+    "objective": "Add a typed frontend API client for backend integration.",
+    "files": ["frontend/src/", "frontend/package.json"],
+    "acceptance": [
+      "A typed API client exists for core auth and patient endpoints.",
+      "API base URL configuration is environment-driven.",
+      "Patient list response type supports items, total, offset, and limit.",
+      "Errors are surfaced in a predictable frontend-friendly format.",
+      "Build and type checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-021",
+    "title": "Login/logout frontend",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-021-login-logout-frontend",
+    "dependencies": ["TASK-012", "TASK-015", "TASK-020"],
+    "objective": "Implement frontend authentication screens and session handling.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "Login screen exists and submits credentials through the API client.",
+      "Logout flow clears local session state.",
+      "Current user/session state is represented in the UI shell.",
+      "Authentication errors are displayed without leaking sensitive details.",
+      "Build and available frontend checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-022",
+    "title": "Patient list page",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-022-patient-list-page",
+    "dependencies": ["TASK-010", "TASK-012", "TASK-020"],
+    "objective": "Implement patient list, search, filters, and pagination UI.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "Patient list page displays API results.",
+      "Search and pagination controls exist.",
+      "Loading, empty, and error states are handled.",
+      "The page uses the typed API client.",
+      "Build and available frontend checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-023",
+    "title": "Patient detail page",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-023-patient-detail-page",
+    "dependencies": ["TASK-012", "TASK-020"],
+    "objective": "Implement patient detail view.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "Patient detail page fetches and displays one patient.",
+      "Missing patient and API error states are handled.",
+      "Navigation from list to detail is supported when list page exists.",
+      "The page uses the typed API client.",
+      "Build and available frontend checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-024",
+    "title": "Patient create form",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-024-patient-create-form",
+    "dependencies": ["TASK-012", "TASK-020"],
+    "objective": "Implement patient creation form with validation.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "Patient creation form includes required fields.",
+      "Client-side validation mirrors the backend schema where practical.",
+      "Successful create navigates or displays the created patient.",
+      "API validation errors are displayed clearly.",
+      "Build and available frontend checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-025",
+    "title": "Patient edit form",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-025-patient-edit-form",
+    "dependencies": ["TASK-012", "TASK-020", "TASK-023"],
+    "objective": "Implement patient editing form with validation.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "Patient edit form loads existing values.",
+      "Partial update is sent through the API client.",
+      "Validation and API errors are displayed clearly.",
+      "Successful update refreshes or navigates to the detail view.",
+      "Build and available frontend checks pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-026",
+    "title": "Patient archive/delete flow",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "high",
+    "branch": "codex/task-026-patient-archive-delete-flow",
+    "dependencies": ["TASK-012", "TASK-020", "TASK-023"],
+    "objective": "Implement controlled patient archive or delete workflow in the frontend.",
+    "files": ["frontend/src/"],
+    "acceptance": [
+      "A guarded delete or archive action exists from the patient detail context.",
+      "A confirmation step is required before destructive action.",
+      "Successful deletion/archive updates navigation or UI state.",
+      "Failure states are displayed clearly.",
+      "No irreversible UX shortcut is introduced."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-027",
+    "title": "Frontend smoke tests",
+    "version": "v0.3.0",
+    "type": "frontend",
+    "risk": "medium",
+    "branch": "codex/task-027-frontend-smoke-tests",
+    "dependencies": ["TASK-012", "TASK-021", "TASK-022"],
+    "objective": "Add smoke tests for the core frontend patient flow.",
+    "files": ["frontend/"],
+    "acceptance": [
+      "Smoke test tooling is documented and runnable.",
+      "At least login shell, patient list route, and patient detail route are covered when available.",
+      "Tests avoid relying on production services.",
+      "CI or local validation command is documented.",
+      "Build and available test commands pass."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-088",
+    "title": "Automated encrypted backups",
+    "version": "v1.0.0",
+    "type": "devops",
+    "risk": "high",
+    "branch": "codex/task-088-automated-encrypted-backups",
+    "dependencies": ["TASK-086"],
+    "objective": "Define and implement the first automated encrypted PostgreSQL backup approach or, if infrastructure is not available, add a precise runbook and script skeleton.",
+    "files": ["docs/operations/", "scripts/"],
+    "acceptance": [
+      "Backup strategy is documented.",
+      "Encryption approach is documented without storing real secrets.",
+      "Retention and storage assumptions are explicit.",
+      "A runnable script or clearly marked script skeleton exists when feasible.",
+      "Restore verification is deferred to TASK-089."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-089",
+    "title": "Restore drill",
+    "version": "v1.0.0",
+    "type": "devops",
+    "risk": "high",
+    "branch": "codex/task-089-restore-drill",
+    "dependencies": ["TASK-088"],
+    "objective": "Document and script a restore drill for PostgreSQL backups.",
+    "files": ["docs/operations/", "scripts/"],
+    "acceptance": [
+      "Restore drill checklist exists.",
+      "Restore target environment assumptions are explicit.",
+      "Verification steps after restore are documented.",
+      "No production destructive command is run automatically.",
+      "Secrets are never committed."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-090",
+    "title": "Health checks",
+    "version": "v1.0.0",
+    "type": "backend",
+    "risk": "medium",
+    "branch": "codex/task-090-health-checks",
+    "dependencies": [],
+    "objective": "Add application health checks for app, database, Redis, and version visibility.",
+    "files": ["backend/app/", "backend/tests/"],
+    "acceptance": [
+      "A lightweight health endpoint exists.",
+      "Database and Redis checks are represented appropriately.",
+      "The endpoint does not expose secrets.",
+      "Tests cover healthy and representative unhealthy states where practical.",
+      "Docker or deployment integration is documented if changed."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-091",
+    "title": "Structured logging",
+    "version": "v1.0.0",
+    "type": "backend",
+    "risk": "medium",
+    "branch": "codex/task-091-structured-logging",
+    "dependencies": [],
+    "objective": "Introduce structured backend logging without logging sensitive patient data.",
+    "files": ["backend/app/", "backend/tests/", "docs/operations/"],
+    "acceptance": [
+      "Backend logging format is documented.",
+      "Request or application logs are structured enough for operations.",
+      "Sensitive patient data, tokens, and passwords are not logged.",
+      "Existing LOG_LEVEL behavior remains compatible.",
+      "Tests or documentation cover the logging policy."
+    ],
+    "validation": "backend"
+  },
+  {
+    "id": "TASK-092",
+    "title": "Monitoring and alerts",
+    "version": "v1.0.0",
+    "type": "devops",
+    "risk": "medium",
+    "branch": "codex/task-092-monitoring-alerts",
+    "dependencies": ["TASK-090", "TASK-091"],
+    "objective": "Document monitoring and alerting expectations for production.",
+    "files": ["docs/operations/"],
+    "acceptance": [
+      "Monitoring targets are listed: uptime, disk, database, backend errors, backup status.",
+      "Alert severity levels are defined.",
+      "Initial manual or external monitoring approach is documented.",
+      "No external secrets are committed.",
+      "Follow-up implementation gaps are explicit."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-093",
+    "title": "Admin documentation",
+    "version": "v1.0.0",
+    "type": "docs",
+    "risk": "low",
+    "branch": "codex/task-093-admin-documentation",
+    "dependencies": ["TASK-086"],
+    "objective": "Add administrator documentation for deployment, accounts, operations, backups, and incident basics.",
+    "files": ["docs/admin/", "docs/operations/"],
+    "acceptance": [
+      "Admin guide exists.",
+      "Account and role management is described based on current implementation.",
+      "Backup, restore, deployment, and incident references are linked when available.",
+      "No secrets or environment-specific credentials are committed.",
+      "Known gaps are listed."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-094",
+    "title": "User documentation",
+    "version": "v1.0.0",
+    "type": "docs",
+    "risk": "low",
+    "branch": "codex/task-094-user-documentation",
+    "dependencies": ["TASK-022", "TASK-023", "TASK-024", "TASK-025"],
+    "objective": "Add end-user documentation for the available application workflows.",
+    "files": ["docs/user/"],
+    "acceptance": [
+      "User guide structure exists.",
+      "Patient workflows are documented when available.",
+      "Screens or routes are described without inventing unavailable features.",
+      "Known incomplete areas are marked clearly.",
+      "No sensitive sample data is used."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-095",
+    "title": "End-to-end critical path tests",
+    "version": "v1.0.0",
+    "type": "frontend",
+    "risk": "high",
+    "branch": "codex/task-095-e2e-critical-path-tests",
+    "dependencies": ["TASK-021", "TASK-022", "TASK-024"],
+    "objective": "Add end-to-end tests for the critical application path when frontend and auth are available.",
+    "files": ["frontend/", "docs/"],
+    "acceptance": [
+      "E2E tooling and command are documented.",
+      "Critical path includes login and basic patient flow when implemented.",
+      "Tests use non-production test data.",
+      "CI integration is documented or implemented if practical.",
+      "Limitations are explicit if the frontend is not ready."
+    ],
+    "validation": "frontend"
+  },
+  {
+    "id": "TASK-096",
+    "title": "User acceptance testing",
+    "version": "v1.0.0",
+    "type": "docs",
+    "risk": "medium",
+    "branch": "codex/task-096-user-acceptance-testing",
+    "dependencies": ["TASK-022", "TASK-023", "TASK-024"],
+    "objective": "Prepare user acceptance test scenarios for production readiness.",
+    "files": ["docs/testing/"],
+    "acceptance": [
+      "UAT scenario document exists.",
+      "Patient, auth, prescription, order, and operations scenarios are represented as applicable.",
+      "Each scenario has preconditions, steps, expected result, and pass/fail fields.",
+      "Unavailable features are marked as future or blocked.",
+      "No real patient data is included."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-097",
+    "title": "Production launch",
+    "version": "v1.0.0",
+    "type": "devops",
+    "risk": "high",
+    "branch": "codex/task-097-production-launch",
+    "dependencies": ["TASK-086", "TASK-087", "TASK-088", "TASK-089", "TASK-090", "TASK-096"],
+    "objective": "Prepare the production launch checklist and go/no-go decision template.",
+    "files": ["docs/operations/"],
+    "acceptance": [
+      "Go/no-go checklist exists.",
+      "Launch communication, validation, rollback, and monitoring steps are included.",
+      "Required dependencies are explicitly listed.",
+      "No production deployment is triggered automatically.",
+      "Post-launch checks are documented."
+    ],
+    "validation": "docs"
+  },
+  {
+    "id": "TASK-098",
+    "title": "Post-launch stabilization",
+    "version": "v1.0.0",
+    "type": "docs",
+    "risk": "medium",
+    "branch": "codex/task-098-post-launch-stabilization",
+    "dependencies": ["TASK-097"],
+    "objective": "Prepare the post-launch stabilization process and issue triage policy.",
+    "files": ["docs/operations/"],
+    "acceptance": [
+      "Post-launch stabilization checklist exists.",
+      "Bug severity and triage rules are defined.",
+      "Daily review and rollback criteria are documented.",
+      "Known support channels and escalation paths are placeholders, not invented secrets.",
+      "No runtime behavior is changed."
+    ],
+    "validation": "docs"
+  }
+]
