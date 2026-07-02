@@ -10,6 +10,10 @@ jobs:
   backend:
     name: Backend (ruff + mypy + pytest)
     runs-on: ubuntu-latest
+    env:
+      # Valeurs de test uniquement — jamais utilisées en dehors de ce job CI.
+      APP_SECRET_KEY: "ci-test-app-secret-key-not-for-production-000000"
+      JWT_SECRET_KEY: "ci-test-jwt-secret-key-not-for-production-000000"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
